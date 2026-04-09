@@ -158,11 +158,32 @@ func Load() (*Config, error) {
 }
 
 func (c *Config) validate() error {
+	mode := strings.ToLower(c.Server.Mode)
+	if mode == "" {
+		return fmt.Errorf("SERVER_MODE is required")
+	}
+	if mode != "development" && mode != "staging" && mode != "production" {
+		return fmt.Errorf("SERVER_MODE must be one of: development, staging, production")
+	}
+
 	if c.Database.URL == "" {
 		return fmt.Errorf("DATABASE_URL is required")
 	}
+	if c.Database.MaxConnections <= 0 {
+		return fmt.Errorf("DATABASE_MAX_CONNECTIONS must be positive")
+	}
+	if c.Database.MinConnections < 0 {
+		return fmt.Errorf("DATABASE_MIN_CONNECTIONS must be non-negative")
+	}
+	if c.Database.MinConnections > c.Database.MaxConnections {
+		return fmt.Errorf("DATABASE_MIN_CONNECTIONS cannot exceed DATABASE_MAX_CONNECTIONS")
+	}
+
 	if c.JWT.Secret == "" {
 		return fmt.Errorf("JWT_SECRET is required")
+	}
+	if len(c.JWT.Secret) < 32 {
+		return fmt.Errorf("JWT_SECRET must be at least 32 characters")
 	}
 	if c.JWT.AccessTTL <= 0 {
 		return fmt.Errorf("JWT_ACCESS_TTL must be positive")
@@ -170,6 +191,24 @@ func (c *Config) validate() error {
 	if c.JWT.RefreshTTL <= 0 {
 		return fmt.Errorf("JWT_REFRESH_TTL must be positive")
 	}
+	if c.Rate.API <= 0 {
+		return fmt.Errorf("RATE_LIMIT_API must be positive")
+	}
+	if c.Rate.Auth <= 0 {
+		return fmt.Errorf("RATE_LIMIT_AUTH must be positive")
+	}
+	if len(c.CORS.AllowedOrigins) == 0 {
+		return fmt.Errorf("CORS_ALLOWED_ORIGINS must contain at least one origin")
+	}
+	for _, origin := range c.CORS.AllowedOrigins {
+		if origin == "*" {
+			return fmt.Errorf("CORS_ALLOWED_ORIGINS cannot contain wildcard origin")
+		}
+		if !strings.HasPrefix(origin, "http://") && !strings.HasPrefix(origin, "https://") {
+			return fmt.Errorf("invalid CORS origin: %s", origin)
+		}
+	}
+
 	validProviders := map[string]bool{"alpaca": true, "simulated": true}
 	if !validProviders[c.Market.Provider] {
 		return fmt.Errorf("MARKET_DATA_PROVIDER must be one of: alpaca, simulated")
@@ -178,6 +217,18 @@ func (c *Config) validate() error {
 	if !validExecutors[c.Order.Executor] {
 		return fmt.Errorf("ORDER_EXECUTOR must be one of: alpaca, simulated")
 	}
+
+	if mode == "production" {
+		if c.Log.Format != "json" {
+			return fmt.Errorf("LOG_FORMAT must be json in production")
+		}
+		for _, origin := range c.CORS.AllowedOrigins {
+			if strings.Contains(origin, "localhost") || strings.Contains(origin, "127.0.0.1") {
+				return fmt.Errorf("localhost origins are not allowed in production: %s", origin)
+			}
+		}
+	}
+
 	return nil
 }
 
