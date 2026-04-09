@@ -1,0 +1,32 @@
+version: "3.9"
+
+# Dev overrides: hot reload, debug ports, no prebuilt images
+services:
+  db:
+    ports:
+      - "5432:5432"
+
+  backend:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ../backend:/app
+    environment:
+      SERVER_MODE: development
+      LOG_FORMAT: console
+      LOG_LEVEL: debug
+      MARKET_DATA_PROVIDER: simulated
+      ORDER_EXECUTOR: simulated
+    command: ["air"]   # uses cosmtrek/air for hot reload
+
+  frontend:
+    image: node:22-alpine
+    working_dir: /app
+    volumes:
+      - ../frontend:/app
+    command: ["npm", "run", "start", "--", "--host", "0.0.0.0", "--poll", "2000"]
+    ports:
+      - "4200:4200"
+    environment:
+      NODE_ENV: development
