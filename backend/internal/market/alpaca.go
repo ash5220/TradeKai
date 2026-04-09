@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/alpacahq/alpaca-trade-api-go/v3/marketdata"
 	alpaca "github.com/alpacahq/alpaca-trade-api-go/v3/marketdata/stream"
 	"go.uber.org/zap"
 
@@ -36,9 +37,9 @@ func NewAlpacaProvider(apiKey, apiSecret, dataFeed string, log *zap.Logger) *Alp
 
 // Connect establishes the Alpaca WebSocket connection and subscribes to trades.
 func (p *AlpacaProvider) Connect(ctx context.Context, symbols []string) error {
-	feed := alpaca.US
+	feed := marketdata.IEX
 	if p.dataFeed == "sip" {
-		feed = alpaca.SIP
+		feed = marketdata.SIP
 	}
 
 	client := alpaca.NewStocksClient(feed,
@@ -89,7 +90,7 @@ func (p *AlpacaProvider) Connect(ctx context.Context, symbols []string) error {
 	}
 
 	go func() {
-		if err := client.Run(); err != nil {
+		if err := <-client.Terminated(); err != nil {
 			p.log.Error("alpaca stream error", zap.Error(err))
 		}
 	}()

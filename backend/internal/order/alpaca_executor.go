@@ -33,7 +33,7 @@ func (e *AlpacaExecutor) PlaceOrder(_ context.Context, order domain.Order) (stri
 	req := alpaca.PlaceOrderRequest{
 		Symbol:      order.Symbol,
 		Qty:         &qty,
-		Side:        alpaca.OrderSide(order.Side),
+		Side:        alpaca.Side(order.Side),
 		Type:        alpaca.OrderType(order.Type),
 		TimeInForce: alpaca.Day,
 	}
