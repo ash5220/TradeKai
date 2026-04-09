@@ -1,0 +1,32 @@
+<div class="card">
+  <h3>Strategies</h3>
+  @if (strategies().length === 0) {
+    <p class="empty">No strategies configured.</p>
+  } @else {
+    <ul class="strategy-list">
+      @for (s of strategies(); track s.name + s.symbol) {
+        <li class="strategy-item">
+          <div class="strategy-info">
+            <span class="strategy-name">{{ s.name }}</span>
+            <span class="strategy-symbol">{{ s.symbol }}</span>
+          </div>
+          <div class="strategy-controls">
+            <span
+              class="badge"
+              [ngClass]="s.active ? 'badge-active' : 'badge-idle'"
+            >
+              {{ s.active ? "Active" : "Idle" }}
+            </span>
+            @if (s.active) {
+              <button class="btn-danger-sm" (click)="stop(s)">Stop</button>
+            } @else {
+              <button class="btn-success-sm" (click)="start(s)">
+                Start
+              </button>
+            }
+          </div>
+        </li>
+      }
+    </ul>
+  }
+</div>

@@ -1,0 +1,46 @@
+<div class="card">
+  <div class="card-header">
+    <h3>Open Positions</h3>
+    <button class="btn-ghost" (click)="refresh()">Refresh</button>
+  </div>
+  @if (positions().length === 0) {
+    <p class="empty">No open positions.</p>
+  } @else {
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Symbol</th>
+          <th>Qty</th>
+          <th>Avg Price</th>
+          <th>Current</th>
+          <th>Unrealized P&amp;L</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (pos of positions(); track pos.symbol) {
+          <tr>
+            <td class="symbol">{{ pos.symbol }}</td>
+            <td>{{ pos.qty | number: "1.0-4" }}</td>
+            <td>{{ pos.avg_price | number: "1.2-2" }}</td>
+            <td>{{ currentPrice(pos.symbol) | number: "1.2-2" }}</td>
+            <td
+              [ngClass]="
+                (pos.unrealized_pnl ?? 0) >= 0
+                  ? 'pnl-positive'
+                  : 'pnl-negative'
+              "
+            >
+              {{ pos.unrealized_pnl | number: "1.2-2" }}
+            </td>
+            <td>
+              <button class="btn-danger-sm" (click)="closePosition(pos)">
+                Close
+              </button>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  }
+</div>

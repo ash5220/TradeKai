@@ -27,61 +27,8 @@ const INTERVALS = ["1m", "5m", "1h"];
   selector: "tk-price-chart",
   standalone: true,
   imports: [FormsModule],
-  template: `
-    <div class="card chart-card">
-      <div class="card-header">
-        <h3>Price Chart</h3>
-        <div class="controls">
-          <select
-            [(ngModel)]="selectedSymbol"
-            (ngModelChange)="onSymbolChange($event)"
-          >
-            @for (s of symbols; track s) {
-              <option [value]="s">{{ s }}</option>
-            }
-          </select>
-          <select
-            [(ngModel)]="selectedInterval"
-            (ngModelChange)="onIntervalChange($event)"
-          >
-            @for (i of intervals; track i) {
-              <option [value]="i">{{ i }}</option>
-            }
-          </select>
-        </div>
-      </div>
-      <div #chartContainer class="chart-container"></div>
-    </div>
-  `,
-  styles: [
-    `
-      .chart-card {
-        display: flex;
-        flex-direction: column;
-      }
-      .card-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 0.5rem;
-      }
-      .controls {
-        display: flex;
-        gap: 0.5rem;
-      }
-      .chart-container {
-        width: 100%;
-        height: 400px;
-      }
-      select {
-        padding: 0.25rem 0.5rem;
-        border-radius: 4px;
-        border: 1px solid #444;
-        background: #1e1e2e;
-        color: #cdd6f4;
-      }
-    `,
-  ],
+  templateUrl: "./price-chart.component.html",
+  styleUrl: "./price-chart.component.scss",
 })
 export class PriceChartComponent implements OnInit, OnDestroy {
   @ViewChild("chartContainer", { static: true })
@@ -156,7 +103,7 @@ export class PriceChartComponent implements OnInit, OnDestroy {
       next: (candles) => {
         if (this.series) {
           const data: CandlestickData[] = candles.map((c) => ({
-            time: Math.floor(new Date(c.time).getTime() / 1000) as Time,
+            time: Math.floor(new Date(c.ts).getTime() / 1000) as Time,
             open: c.open,
             high: c.high,
             low: c.low,

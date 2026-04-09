@@ -1,0 +1,17 @@
+<nav class="navbar">
+  <a class="brand" routerLink="/dashboard">TradeKai</a>
+  @if (auth.isAuthenticated()) {
+    <ul class="nav-links">
+      <li>
+        <a routerLink="/dashboard" routerLinkActive="active">Dashboard</a>
+      </li>
+      <li>
+        <a routerLink="/trading" routerLinkActive="active">Trading</a>
+      </li>
+      <li>
+        <a routerLink="/history" routerLinkActive="active">History</a>
+      </li>
+    </ul>
+    <button class="btn-logout" (click)="auth.logout()">Logout</button>
+  }
+</nav>

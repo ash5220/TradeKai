@@ -8,6 +8,8 @@ import { environment } from "../../../environments/environment";
 
 export interface StrategyInfo {
   name: string;
+  symbol: string;
+  active: boolean;
   running: boolean;
 }
 

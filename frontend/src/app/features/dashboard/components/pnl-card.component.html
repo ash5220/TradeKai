@@ -1,0 +1,14 @@
+<div class="card metric-card">
+  <div class="metric-label">Daily P&L</div>
+  <div class="metric-subrow">
+    <span class="metric-label">Daily Realized P&amp;L</span>
+    <span
+      class="metric-pnl"
+      [ngClass]="
+        (summary()?.daily_realized_pnl ?? 0) >= 0 ? 'positive' : 'negative'
+      "
+    >
+      {{ summary()?.daily_realized_pnl | number: "1.2-2" }}
+    </span>
+  </div>
+</div>

@@ -1,0 +1,36 @@
+.metric-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.metric-label {
+  font-size: 0.8rem;
+  color: #6c7086;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.metric-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #cdd6f4;
+}
+
+.metric-subrow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.metric-pnl {
+  font-weight: 600;
+}
+
+.positive {
+  color: #a6e3a1;
+}
+
+.negative {
+  color: #f38ba8;
+}

@@ -1,0 +1,10 @@
+<div class="card metric-card">
+  <div class="metric-label">System Status</div>
+  <div class="status-row">
+    <span class="status-dot" [ngClass]="dotClass()"></span>
+    <span class="status-text">{{ statusLabel() }}</span>
+  </div>
+  @if (state() === "error") {
+    <p class="status-hint">Attempting to reconnect…</p>
+  }
+</div>

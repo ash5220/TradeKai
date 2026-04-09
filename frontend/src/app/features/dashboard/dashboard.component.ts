@@ -14,30 +14,8 @@ import { SystemHealthComponent } from "./components/system-health.component";
     PnlCardComponent,
     SystemHealthComponent,
   ],
-  template: `
-    <div class="dashboard">
-      <div class="top-row">
-        <tk-pnl-card />
-        <tk-system-health />
-      </div>
-      <tk-price-chart />
-      <tk-position-table />
-    </div>
-  `,
-  styles: [
-    `
-      .dashboard {
-        display: flex;
-        flex-direction: column;
-        gap: 1.5rem;
-      }
-      .top-row {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 1rem;
-      }
-    `,
-  ],
+  templateUrl: "./dashboard.component.html",
+  styleUrl: "./dashboard.component.scss",
 })
 export class DashboardComponent implements OnInit {
   private readonly ws = inject(WebSocketService);

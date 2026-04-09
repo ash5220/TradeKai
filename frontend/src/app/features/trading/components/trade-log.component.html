@@ -1,0 +1,39 @@
+<div class="card trade-log-card">
+  <h3>Live Trade Log</h3>
+  @if (orders().length === 0) {
+    <p class="empty">Waiting for orders…</p>
+  } @else {
+    <div class="log-scroll">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Time</th>
+            <th>Symbol</th>
+            <th>Side</th>
+            <th>Type</th>
+            <th>Qty</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (o of orders(); track o.id) {
+            <tr>
+              <td>{{ o.created_at | date: "HH:mm:ss" }}</td>
+              <td class="symbol">{{ o.symbol }}</td>
+              <td [ngClass]="o.side === 'buy' ? 'side-buy' : 'side-sell'">
+                {{ o.side }}
+              </td>
+              <td>{{ o.type }}</td>
+              <td>{{ o.qty }}</td>
+              <td>
+                <span class="badge" [ngClass]="statusClass(o.status)">{{
+                  o.status
+                }}</span>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>

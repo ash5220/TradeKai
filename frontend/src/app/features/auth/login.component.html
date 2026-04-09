@@ -1,0 +1,33 @@
+<div class="auth-container">
+  <div class="auth-card">
+    <h1>TradeKai</h1>
+    <h2>Sign In</h2>
+    <form [formGroup]="form" (ngSubmit)="submit()">
+      <label>
+        Email
+        <input
+          type="email"
+          formControlName="email"
+          placeholder="you@example.com"
+        />
+      </label>
+      <label>
+        Password
+        <input
+          type="password"
+          formControlName="password"
+          placeholder="••••••••"
+        />
+      </label>
+      @if (error()) {
+        <p class="error">{{ error() }}</p>
+      }
+      <button type="submit" [disabled]="form.invalid || loading()">
+        {{ loading() ? "Signing in…" : "Sign In" }}
+      </button>
+    </form>
+    <p class="link">
+      No account? <a routerLink="/auth/register">Register</a>
+    </p>
+  </div>
+</div>

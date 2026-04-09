@@ -1,0 +1,67 @@
+<div class="card">
+  <div class="page-header">
+    <h2>Trade History</h2>
+    <div class="filters">
+      <input
+        [ngModel]="filterSymbol()"
+        (ngModelChange)="filterSymbol.set($event)"
+        placeholder="Filter by symbol…"
+        class="filter-input"
+      />
+      <select
+        [ngModel]="filterSide()"
+        (ngModelChange)="filterSide.set($event)"
+        class="filter-select"
+      >
+        <option value="">All sides</option>
+        <option value="buy">Buy</option>
+        <option value="sell">Sell</option>
+      </select>
+    </div>
+  </div>
+
+  @if (loading()) {
+    <p class="state-msg">Loading…</p>
+  } @else if (filtered().length === 0) {
+    <p class="state-msg">No trades found.</p>
+  } @else {
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Symbol</th>
+          <th>Side</th>
+          <th>Type</th>
+          <th>Qty</th>
+          <th>Avg Fill</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (o of filtered(); track o.id) {
+          <tr>
+            <td>{{ o.created_at | date: "medium" }}</td>
+            <td class="symbol">{{ o.symbol }}</td>
+            <td [ngClass]="o.side === 'buy' ? 'side-buy' : 'side-sell'">
+              {{ o.side }}
+            </td>
+            <td>{{ o.type }}</td>
+            <td>{{ o.qty | number: "1.0-4" }}</td>
+            <td>
+              {{
+                o.filled_avg_price
+                  ? (o.filled_avg_price | number: "1.2-2")
+                  : "—"
+              }}
+            </td>
+            <td>
+              <span class="badge" [ngClass]="statusClass(o.status)">{{
+                o.status
+              }}</span>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  }
+</div>

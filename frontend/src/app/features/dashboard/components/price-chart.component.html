@@ -1,0 +1,24 @@
+<div class="card chart-card">
+  <div class="card-header">
+    <h3>Price Chart</h3>
+    <div class="controls">
+      <select
+        [(ngModel)]="selectedSymbol"
+        (ngModelChange)="onSymbolChange($event)"
+      >
+        @for (s of symbols; track s) {
+          <option [value]="s">{{ s }}</option>
+        }
+      </select>
+      <select
+        [(ngModel)]="selectedInterval"
+        (ngModelChange)="onIntervalChange($event)"
+      >
+        @for (i of intervals; track i) {
+          <option [value]="i">{{ i }}</option>
+        }
+      </select>
+    </div>
+  </div>
+  <div #chartContainer class="chart-container"></div>
+</div>

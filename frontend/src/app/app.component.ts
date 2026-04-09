@@ -6,25 +6,7 @@ import { NavbarComponent } from "./shared/components/navbar.component";
   selector: "tk-root",
   standalone: true,
   imports: [RouterOutlet, NavbarComponent],
-  template: `
-    <tk-navbar />
-    <main class="main-content">
-      <router-outlet />
-    </main>
-  `,
-  styles: [
-    `
-      :host {
-        display: flex;
-        flex-direction: column;
-        min-height: 100vh;
-      }
-      .main-content {
-        flex: 1;
-        padding: 1.5rem;
-        background: #0f1117;
-      }
-    `,
-  ],
+  templateUrl: "./app.component.html",
+  styleUrl: "./app.component.scss",
 })
 export class AppComponent {}
