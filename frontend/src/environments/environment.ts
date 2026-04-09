@@ -6,6 +6,6 @@ export interface Environment {
 
 export const environment: Environment = {
   production: false,
-  apiUrl: '/api/v1',
+  apiUrl: "/api/v1",
   wsUrl: `ws://${window.location.host}/ws`,
 };

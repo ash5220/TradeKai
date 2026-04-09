@@ -1,9 +1,9 @@
-import { Routes } from '@angular/router';
+import { Routes } from "@angular/router";
 
 export const TRADING_ROUTES: Routes = [
   {
-    path: '',
+    path: "",
     loadComponent: () =>
-      import('./trading.component').then(m => m.TradingComponent),
+      import("./trading.component").then((m) => m.TradingComponent),
   },
 ];

@@ -1,10 +1,14 @@
-import { computed, inject, Injectable, OnDestroy, signal } from '@angular/core';
-import type { Tick } from '../../shared/models/market.model';
-import type { Order } from '../../shared/models/order.model';
-import { AuthService } from '../auth/auth.service';
-import { environment } from '../../../environments/environment';
+import { computed, inject, Injectable, OnDestroy, signal } from "@angular/core";
+import type { Tick } from "../../shared/models/market.model";
+import type { Order } from "../../shared/models/order.model";
+import { AuthService } from "../auth/auth.service";
+import { environment } from "../../../environments/environment";
 
-export type ConnectionState = 'connecting' | 'connected' | 'disconnected' | 'error';
+export type ConnectionState =
+  | "connecting"
+  | "connected"
+  | "disconnected"
+  | "error";
 
 interface WsMessage<T = unknown> {
   type: string;
@@ -12,7 +16,7 @@ interface WsMessage<T = unknown> {
   payload: T;
 }
 
-@Injectable({ providedIn: 'root' })
+@Injectable({ providedIn: "root" })
 export class WebSocketService implements OnDestroy {
   private readonly auth = inject(AuthService);
 
@@ -22,14 +26,16 @@ export class WebSocketService implements OnDestroy {
   private readonly maxDelay = 30_000;
   private destroyed = false;
 
-  private readonly _connectionState = signal<ConnectionState>('disconnected');
+  private readonly _connectionState = signal<ConnectionState>("disconnected");
   private readonly _ticks = signal<Map<string, Tick>>(new Map());
   private readonly _orderUpdates = signal<Order[]>([]);
 
   readonly connectionState = this._connectionState.asReadonly();
   readonly ticks = this._ticks.asReadonly();
   readonly latestOrders = this._orderUpdates.asReadonly();
-  readonly isConnected = computed(() => this._connectionState() === 'connected');
+  readonly isConnected = computed(
+    () => this._connectionState() === "connected",
+  );
 
   connect(): void {
     if (this.ws?.readyState === WebSocket.OPEN) return;
@@ -44,23 +50,23 @@ export class WebSocketService implements OnDestroy {
   }
 
   subscribe(room: string): void {
-    this.send({ action: 'subscribe', room });
+    this.send({ action: "subscribe", room });
   }
 
   unsubscribe(room: string): void {
-    this.send({ action: 'unsubscribe', room });
+    this.send({ action: "unsubscribe", room });
   }
 
   private openConnection(): void {
     const token = this.auth.accessToken();
     if (!token) return;
 
-    this._connectionState.set('connecting');
+    this._connectionState.set("connecting");
     const url = `${environment.wsUrl}?token=${encodeURIComponent(token)}`;
     this.ws = new WebSocket(url);
 
     this.ws.onopen = () => {
-      this._connectionState.set('connected');
+      this._connectionState.set("connected");
       this.reconnectDelay = 1000;
     };
 
@@ -74,11 +80,11 @@ export class WebSocketService implements OnDestroy {
     };
 
     this.ws.onerror = () => {
-      this._connectionState.set('error');
+      this._connectionState.set("error");
     };
 
     this.ws.onclose = () => {
-      this._connectionState.set('disconnected');
+      this._connectionState.set("disconnected");
       if (!this.destroyed) {
         this.scheduleReconnect();
       }
@@ -87,18 +93,18 @@ export class WebSocketService implements OnDestroy {
 
   private handleMessage(msg: WsMessage): void {
     switch (msg.type) {
-      case 'tick': {
+      case "tick": {
         const tick = msg.payload as Tick;
-        this._ticks.update(map => {
+        this._ticks.update((map) => {
           const next = new Map(map);
           next.set(tick.symbol, tick);
           return next;
         });
         break;
       }
-      case 'order_update': {
+      case "order_update": {
         const order = msg.payload as Order;
-        this._orderUpdates.update(orders => [order, ...orders.slice(0, 99)]);
+        this._orderUpdates.update((orders) => [order, ...orders.slice(0, 99)]);
         break;
       }
     }

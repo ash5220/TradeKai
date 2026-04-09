@@ -1,9 +1,9 @@
-import { Routes } from '@angular/router';
+import { Routes } from "@angular/router";
 
 export const HISTORY_ROUTES: Routes = [
   {
-    path: '',
+    path: "",
     loadComponent: () =>
-      import('./history.component').then(m => m.HistoryComponent),
+      import("./history.component").then((m) => m.HistoryComponent),
   },
 ];

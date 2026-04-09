@@ -1,15 +1,15 @@
-import type { Routes } from '@angular/router';
+import type { Routes } from "@angular/router";
 
 export const AUTH_ROUTES: Routes = [
   {
-    path: 'login',
+    path: "login",
     loadComponent: () =>
-      import('./login.component').then(m => m.LoginComponent),
+      import("./login.component").then((m) => m.LoginComponent),
   },
   {
-    path: 'register',
+    path: "register",
     loadComponent: () =>
-      import('./register.component').then(m => m.RegisterComponent),
+      import("./register.component").then((m) => m.RegisterComponent),
   },
-  { path: '', redirectTo: 'login', pathMatch: 'full' },
+  { path: "", redirectTo: "login", pathMatch: "full" },
 ];

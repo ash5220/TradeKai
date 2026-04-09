@@ -18,14 +18,15 @@ services:
       LOG_LEVEL: debug
       MARKET_DATA_PROVIDER: simulated
       ORDER_EXECUTOR: simulated
-    command: ["air"]   # uses cosmtrek/air for hot reload
+    command: ["air"] # uses cosmtrek/air for hot reload
 
   frontend:
     image: node:22-alpine
     working_dir: /app
     volumes:
       - ../frontend:/app
-    command: ["npm", "run", "start", "--", "--host", "0.0.0.0", "--poll", "2000"]
+    command:
+      ["npm", "run", "start", "--", "--host", "0.0.0.0", "--poll", "2000"]
     ports:
       - "4200:4200"
     environment:

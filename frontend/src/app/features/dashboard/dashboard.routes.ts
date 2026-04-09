@@ -1,9 +1,9 @@
-import type { Routes } from '@angular/router';
+import type { Routes } from "@angular/router";
 
 export const DASHBOARD_ROUTES: Routes = [
   {
-    path: '',
+    path: "",
     loadComponent: () =>
-      import('./dashboard.component').then(m => m.DashboardComponent),
+      import("./dashboard.component").then((m) => m.DashboardComponent),
   },
 ];

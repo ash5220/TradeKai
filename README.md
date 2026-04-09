@@ -43,21 +43,21 @@ graph TD
 
 ## Technology Stack
 
-| Layer       | Technology                                 |
-|-------------|--------------------------------------------|
-| Backend     | Go 1.23, Gin v1.12                         |
-| Database    | PostgreSQL 16 + TimescaleDB (hypertables)  |
-| ORM / SQL   | sqlc v1.30 (type-safe query generation)    |
-| Migrations  | golang-migrate                             |
-| Auth        | JWT (golang-jwt/jwt v5) + bcrypt           |
-| WebSocket   | gorilla/websocket (room-based pub/sub)     |
-| Config      | Viper (`.env` + env vars)                  |
-| Logging     | Zap (JSON prod / console dev)              |
-| Observability | Prometheus + OpenTelemetry               |
-| Frontend    | Angular 21 (standalone + signals)          |
-| Charts      | Lightweight Charts (TradingView)           |
-| CI          | GitHub Actions                             |
-| Deploy      | Docker + docker-compose + nginx            |
+| Layer         | Technology                                |
+| ------------- | ----------------------------------------- |
+| Backend       | Go 1.23, Gin v1.12                        |
+| Database      | PostgreSQL 16 + TimescaleDB (hypertables) |
+| ORM / SQL     | sqlc v1.30 (type-safe query generation)   |
+| Migrations    | golang-migrate                            |
+| Auth          | JWT (golang-jwt/jwt v5) + bcrypt          |
+| WebSocket     | gorilla/websocket (room-based pub/sub)    |
+| Config        | Viper (`.env` + env vars)                 |
+| Logging       | Zap (JSON prod / console dev)             |
+| Observability | Prometheus + OpenTelemetry                |
+| Frontend      | Angular 21 (standalone + signals)         |
+| Charts        | Lightweight Charts (TradingView)          |
+| CI            | GitHub Actions                            |
+| Deploy        | Docker + docker-compose + nginx           |
 
 ## Project Structure
 
@@ -151,21 +151,21 @@ Interactive Swagger docs are available at `http://localhost:8080/api/v1/docs/ind
 
 ### Key Endpoints
 
-| Method | Path | Description |
-|--------|------|-------------|
-| POST | `/api/v1/auth/register` | Register a new user |
-| POST | `/api/v1/auth/login` | Login, returns JWT token pair |
-| POST | `/api/v1/auth/refresh` | Refresh access token |
-| GET  | `/api/v1/orders` | List orders (paginated) |
-| POST | `/api/v1/orders` | Place a new order |
-| DELETE | `/api/v1/orders/:id` | Cancel an order |
-| GET  | `/api/v1/portfolio/positions` | Open positions |
-| GET  | `/api/v1/portfolio/pnl` | Daily realized P&L |
-| GET  | `/api/v1/market/candles/:symbol` | OHLCV candles |
-| GET  | `/api/v1/strategies` | List configured strategies |
-| POST | `/api/v1/strategies/:name/start` | Start a strategy |
-| POST | `/api/v1/strategies/:name/stop` | Stop a strategy |
-| GET  | `/ws` | WebSocket connection (requires `?token=<access_token>`) |
+| Method | Path                             | Description                                             |
+| ------ | -------------------------------- | ------------------------------------------------------- |
+| POST   | `/api/v1/auth/register`          | Register a new user                                     |
+| POST   | `/api/v1/auth/login`             | Login, returns JWT token pair                           |
+| POST   | `/api/v1/auth/refresh`           | Refresh access token                                    |
+| GET    | `/api/v1/orders`                 | List orders (paginated)                                 |
+| POST   | `/api/v1/orders`                 | Place a new order                                       |
+| DELETE | `/api/v1/orders/:id`             | Cancel an order                                         |
+| GET    | `/api/v1/portfolio/positions`    | Open positions                                          |
+| GET    | `/api/v1/portfolio/pnl`          | Daily realized P&L                                      |
+| GET    | `/api/v1/market/candles/:symbol` | OHLCV candles                                           |
+| GET    | `/api/v1/strategies`             | List configured strategies                              |
+| POST   | `/api/v1/strategies/:name/start` | Start a strategy                                        |
+| POST   | `/api/v1/strategies/:name/stop`  | Stop a strategy                                         |
+| GET    | `/ws`                            | WebSocket connection (requires `?token=<access_token>`) |
 
 ## WebSocket Protocol
 
@@ -179,6 +179,7 @@ Connect with `?token=<JWT>`. Send JSON messages to subscribe/unsubscribe:
 Rooms: `ticks:<SYMBOL>`, `orders:<USER_ID>`
 
 Server broadcasts:
+
 ```json
 { "type": "tick",         "payload": { "symbol": "AAPL", "price": 193.44, "ts": "..." } }
 { "type": "order_update", "payload": { "id": "...", "status": "filled", ... } }
@@ -188,19 +189,19 @@ Server broadcasts:
 
 All settings are loaded from a `.env` file (see `.env.example`). Key variables:
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `DATABASE_URL` | — | PostgreSQL connection string (required) |
-| `JWT_SECRET` | — | Secret key for JWT signing (required, min 32 chars) |
-| `MARKET_PROVIDER` | `simulated` | `simulated` or `alpaca` |
-| `ORDER_PROVIDER` | `simulated` | `simulated` or `alpaca` |
-| `ALPACA_API_KEY` | — | Alpaca paper-trading key |
-| `ALPACA_API_SECRET` | — | Alpaca paper-trading secret |
-| `RISK_MAX_POSITION_SIZE` | `10000` | Max $ per position |
-| `RISK_DAILY_LOSS_LIMIT` | `5000` | Max daily loss before trading halts |
-| `SERVER_PORT` | `8080` | HTTP listen port |
-| `LOG_LEVEL` | `info` | `debug` / `info` / `warn` / `error` |
-| `LOG_ENV` | `development` | `development` (console) or `production` (JSON) |
+| Variable                 | Default       | Description                                         |
+| ------------------------ | ------------- | --------------------------------------------------- |
+| `DATABASE_URL`           | —             | PostgreSQL connection string (required)             |
+| `JWT_SECRET`             | —             | Secret key for JWT signing (required, min 32 chars) |
+| `MARKET_PROVIDER`        | `simulated`   | `simulated` or `alpaca`                             |
+| `ORDER_PROVIDER`         | `simulated`   | `simulated` or `alpaca`                             |
+| `ALPACA_API_KEY`         | —             | Alpaca paper-trading key                            |
+| `ALPACA_API_SECRET`      | —             | Alpaca paper-trading secret                         |
+| `RISK_MAX_POSITION_SIZE` | `10000`       | Max $ per position                                  |
+| `RISK_DAILY_LOSS_LIMIT`  | `5000`        | Max daily loss before trading halts                 |
+| `SERVER_PORT`            | `8080`        | HTTP listen port                                    |
+| `LOG_LEVEL`              | `info`        | `debug` / `info` / `warn` / `error`                 |
+| `LOG_ENV`                | `development` | `development` (console) or `production` (JSON)      |
 
 ## Running Tests
 

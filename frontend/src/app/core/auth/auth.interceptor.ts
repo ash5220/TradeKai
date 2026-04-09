@@ -1,18 +1,18 @@
-import { inject } from '@angular/core';
+import { inject } from "@angular/core";
 import {
   HttpRequest,
   HttpHandlerFn,
   HttpEvent,
   HttpErrorResponse,
   HttpInterceptorFn,
-} from '@angular/common/http';
-import { Observable, throwError } from 'rxjs';
-import { catchError } from 'rxjs/operators';
-import { AuthService } from './auth.service';
+} from "@angular/common/http";
+import { Observable, throwError } from "rxjs";
+import { catchError } from "rxjs/operators";
+import { AuthService } from "./auth.service";
 
 export const authInterceptor: HttpInterceptorFn = (
   req: HttpRequest<unknown>,
-  next: HttpHandlerFn
+  next: HttpHandlerFn,
 ): Observable<HttpEvent<unknown>> => {
   const auth = inject(AuthService);
   const token = auth.accessToken();
@@ -27,6 +27,6 @@ export const authInterceptor: HttpInterceptorFn = (
         auth.logout();
       }
       return throwError(() => err);
-    })
+    }),
   );
 };
