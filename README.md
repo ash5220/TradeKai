@@ -2,6 +2,21 @@
 
 TradeKai is a real-time algorithmic trading platform built as a production-style portfolio project using Go (Gin), Angular 21, PostgreSQL/TimescaleDB, WebSockets, and Docker.
 
+## Why This Project
+
+- Demonstrates end-to-end system design across backend, frontend, database, infrastructure, and CI.
+- Uses clean architecture boundaries and interface-driven adapters for maintainability.
+- Implements real-time market streams, strategy evaluation, risk checks, and order lifecycle tracking.
+- Includes production-hardening patterns: health checks, metrics, rate limiting, TLS-ready reverse proxy, and integration tests.
+
+## What You Can Demo Quickly
+
+1. Register and login via REST API.
+2. Open dashboard and watch real-time market updates.
+3. Start a strategy and observe emitted signals.
+4. Place manual orders and watch order updates over WebSocket.
+5. Show system health and metrics endpoints.
+
 ## Architecture
 
 ### System Overview
@@ -104,6 +119,8 @@ Set at minimum:
 docker compose -f deployments/docker-compose.yml -f deployments/docker-compose.dev.yml up -d db
 ```
 
+This uses the production compose baseline plus the development override.
+
 ### 3) Run migrations and SQL generation
 
 ```bash
@@ -111,6 +128,8 @@ cd backend
 make migrate-up
 make sqlc-generate
 ```
+
+Note: `migrate-up` uses `DATABASE_URL` from your environment or `.env`.
 
 ### 4) Start backend
 
@@ -154,6 +173,8 @@ nginx expects cert files in `deployments/nginx/certs`:
 For local/demo usage, place self-signed certs there.
 For Let's Encrypt, use ACME challenge path mounted at `deployments/nginx/certbot`.
 
+If certificates are not present, nginx TLS listener will fail to start by design.
+
 ### Production configuration defaults
 
 The production compose file sets hardened defaults for:
@@ -164,6 +185,14 @@ The production compose file sets hardened defaults for:
 - higher DB pool and rate-limit defaults
 
 Override these through `.env` in your target environment.
+
+Recommended minimum production checklist:
+
+1. Set a strong `JWT_SECRET` (32+ chars).
+2. Set `CORS_ALLOWED_ORIGINS` to your real frontend domain.
+3. Use valid TLS certs in `deployments/nginx/certs`.
+4. Confirm DB persistence volume backup policy.
+5. Keep metrics endpoint restricted to trusted networks.
 
 ## API Documentation
 
@@ -176,6 +205,8 @@ Health and metrics:
 
 - `GET /api/v1/health`
 - `GET /metrics` (network-restricted in nginx)
+
+Health output includes database status, exchange connectivity snapshot, and memory stats.
 
 ## Key Endpoints
 
@@ -257,6 +288,12 @@ npm run build -- --configuration production
 
 GitHub Actions workflow in `.github/workflows/ci.yml` runs lint, tests, integration tests, and image builds.
 
+CI pipeline highlights:
+
+- Backend lint + unit tests + integration tests.
+- Frontend lint + tests + production build.
+- Docker image build verification for backend and frontend.
+
 ## Screenshots
 
 Add dashboard screenshots here as the UI evolves:
@@ -270,6 +307,8 @@ Recommended path convention:
 - `deployments/screenshots/login.png`
 - `deployments/screenshots/dashboard.png`
 - `deployments/screenshots/trading.png`
+
+Include these in portfolio submissions to make the project easy to evaluate quickly.
 
 ## Key Technical Decisions
 
@@ -286,6 +325,12 @@ Recommended path convention:
 - DB access uses pooled pgx connections with configurable min/max bounds.
 - Order execution includes retry with bounded attempts to avoid unbounded latency growth.
 - WebSocket handling uses dedicated read/write pumps per client with heartbeat.
+
+## Trade-offs and Future Work
+
+- Backtesting engine for historical replay and strategy benchmarking.
+- Multi-exchange adapters beyond Alpaca.
+- Optional message bus if moving from modular monolith to distributed services.
 
 ## License
 
