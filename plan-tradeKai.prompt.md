@@ -34,44 +34,42 @@ TradeKai/
 │   │   └── server/
 │   │       └── main.go                # Entry point: wire dependencies, start server
 │   ├── internal/
-│   │   ├── domain/                     # Core business entities (no external deps)
+│   │   ├── domain/                     # Core business entities + port interfaces (no external deps)
 │   │   │   ├── order.go               # Order, OrderStatus, OrderSide, OrderType
 │   │   │   ├── position.go            # Position, PositionSummary
 │   │   │   ├── market.go              # Tick, Candle, Symbol, Quote
 │   │   │   ├── signal.go              # TradeSignal, SignalType
 │   │   │   ├── user.go                # User entity
-│   │   │   └── errors.go             # Domain-specific errors
-│   │   ├── market/                     # Market Data Service
-│   │   │   ├── provider.go           # MarketDataProvider interface
-│   │   │   ├── alpaca.go             # Alpaca WebSocket implementation
-│   │   │   ├── simulator.go          # Simulated market data (dev/testing)
+│   │   │   ├── errors.go             # Domain-specific errors
+│   │   │   └── ports.go              # Port interfaces: MarketDataProvider, OrderExecutor, Strategy, RiskRule, Indicator
+│   │   ├── market/                     # Market Data adapters (implement domain.MarketDataProvider)
+│   │   │   ├── alpaca.go             # AlpacaProvider: Alpaca WebSocket implementation
+│   │   │   ├── simulator.go          # SimulatedProvider: simulated market data (dev/testing)
 │   │   │   ├── aggregator.go         # Tick → Candle aggregation
 │   │   │   └── hub.go                # Fan-out to subscribers (channels)
-│   │   ├── strategy/                   # Strategy Engine
-│   │   │   ├── strategy.go           # Strategy interface
-│   │   │   ├── engine.go             # Orchestrator: receives market data, runs strategies
-│   │   │   ├── rsi.go                # RSI strategy implementation
-│   │   │   ├── macd.go               # MACD strategy implementation
-│   │   │   └── indicator/            # Technical indicator calculations
+│   │   ├── strategy/                   # Strategy adapters (implement domain.Strategy)
+│   │   │   ├── engine.go             # Engine: orchestrator, receives market data, runs strategies
+│   │   │   ├── rsi.go                # RSIStrategy implementation
+│   │   │   ├── macd.go               # MACDCrossoverStrategy implementation
+│   │   │   └── indicator/            # Indicator adapters (implement domain.Indicator)
 │   │   │       ├── rsi.go
 │   │   │       ├── macd.go
 │   │   │       ├── ema.go
 │   │   │       └── sma.go
-│   │   ├── order/                      # Order Management System
-│   │   │   ├── service.go            # Order lifecycle management
-│   │   │   ├── executor.go           # OrderExecutor interface
-│   │   │   ├── alpaca_executor.go    # Alpaca order execution
-│   │   │   ├── simulated_executor.go # Simulated fills (dev/testing)
+│   │   ├── order/                      # Order Management System (implements domain.OrderExecutor)
+│   │   │   ├── service.go            # Service: order lifecycle management
+│   │   │   ├── alpaca_executor.go    # AlpacaExecutor: Alpaca order execution
+│   │   │   ├── simulated_executor.go # SimulatedExecutor: simulated fills (dev/testing)
 │   │   │   └── retry.go              # Exponential backoff + circuit breaker
-│   │   ├── risk/                       # Risk Management
-│   │   │   ├── manager.go            # RiskManager: pre-trade checks
-│   │   │   └── rules.go              # Max position, daily loss, duplicate prevention
+│   │   ├── risk/                       # Risk Management (implements domain.RiskRule)
+│   │   │   ├── manager.go            # Manager: runs all rules, returns first failure
+│   │   │   └── rules.go              # MaxPositionRule, DailyLossRule, DuplicateTradeRule, etc.
 │   │   ├── auth/                       # Authentication
-│   │   │   ├── service.go            # Register, Login, token generation
+│   │   │   ├── service.go            # Service: Register, Login, token generation
 │   │   │   ├── jwt.go                # JWT creation + validation
 │   │   │   └── middleware.go         # Gin auth middleware
 │   │   ├── user/                       # User management
-│   │   │   └── service.go            # User CRUD, preferences
+│   │   │   └── service.go            # Service: User CRUD, preferences
 │   │   ├── handler/                    # HTTP handlers (Gin)
 │   │   │   ├── auth.go               # POST /auth/register, /auth/login
 │   │   │   ├── market.go             # GET /market/symbols, /market/quotes
@@ -156,12 +154,12 @@ TradeKai/
 │   │   │   │   ├── components/
 │   │   │   │   │   ├── navbar.component.ts
 │   │   │   │   │   └── loading-spinner.component.ts
-│   │   │   │   └── pipes/
-│   │   │   │       └── currency.pipe.ts
-│   │   │   └── models/
-│   │   │       ├── order.model.ts
-│   │   │       ├── position.model.ts
-│   │   │       └── market.model.ts
+│   │   │   │   ├── pipes/
+│   │   │   │   │   └── currency.pipe.ts
+│   │   │   │   └── models/                    # Shared TypeScript interfaces (not type aliases, not classes)
+│   │   │   │       ├── order.model.ts         # export interface Order { ... }
+│   │   │   │       ├── position.model.ts      # export interface Position { ... }
+│   │   │   │       └── market.model.ts        # export interface Tick, Candle, Quote { ... }
 │   │   ├── environments/
 │   │   │   ├── environment.ts
 │   │   │   └── environment.prod.ts
@@ -230,10 +228,16 @@ TradeKai/
   - `TradeSignal` with Buy/Sell/Hold + confidence score
   - `User` entity
   - Domain errors (ErrInsufficientFunds, ErrMaxPositionExceeded, ErrDuplicateOrder, etc.)
+  - `ports.go`: Port interfaces consumed by the domain layer (defined here, implemented by adapters):
+    - `MarketDataProvider`: `Connect`, `Subscribe`, `Close`
+    - `OrderExecutor`: `PlaceOrder`, `CancelOrder`, `GetOrderStatus`
+    - `Strategy`: `Name`, `RequiredIndicators`, `Evaluate`
+    - `RiskRule`: `Check`
+    - `Indicator`: streaming interface (feed one candle at a time, return updated value)
 
 ### Step 5: Market Data Service
 
-- Define `MarketDataProvider` interface:
+- `MarketDataProvider` interface is defined in `domain/ports.go` (consumer: `strategy/engine.go`, `ws/hub.go`):
   ```
   Connect(ctx context.Context, symbols []string) error
   Subscribe(symbol string) (<-chan domain.Tick, error)
@@ -279,7 +283,7 @@ TradeKai/
 
 ### Step 8: Strategy Engine
 
-- Define `Strategy` interface:
+- `Strategy` interface is defined in `domain/ports.go` (consumer: `strategy/engine.go`):
   ```
   Name() string
   RequiredIndicators() []Indicator
@@ -287,7 +291,7 @@ TradeKai/
   ```
 - Implement `RSIStrategy`: Buy when RSI < 30 (oversold), Sell when RSI > 70 (overbought)
 - Implement `MACDCrossoverStrategy`: Buy on bullish crossover, Sell on bearish crossover
-- Implement `StrategyEngine`:
+- Implement `Engine` (`strategy/engine.go`):
   - Subscribes to candle updates from MarketHub
   - Runs configured strategies per symbol
   - Emits TradeSignals through channel
@@ -296,15 +300,15 @@ TradeKai/
 
 ### Step 9: Order Management System
 
-- Define `OrderExecutor` interface:
+- `OrderExecutor` interface is defined in `domain/ports.go` (consumer: `order/service.go`):
   ```
   PlaceOrder(ctx context.Context, order domain.Order) (string, error)
   CancelOrder(ctx context.Context, orderID string) error
   GetOrderStatus(ctx context.Context, orderID string) (domain.OrderStatus, error)
   ```
-- Implement `AlpacaExecutor`: Places real orders through Alpaca API
-- Implement `SimulatedExecutor`: Simulates fills with configurable latency/slippage
-- Implement `OrderService`:
+- Implement `AlpacaExecutor` (`order/alpaca_executor.go`): Places real orders through Alpaca API
+- Implement `SimulatedExecutor` (`order/simulated_executor.go`): Simulates fills with configurable latency/slippage
+- Implement `Service` (`order/service.go`):
   - Receives TradeSignals from strategy engine
   - Passes through RiskManager before execution
   - Creates order record in DB (status=Pending)
@@ -315,14 +319,14 @@ TradeKai/
 
 ### Step 10: Risk Management
 
-- Implement `RiskManager` with configurable rules:
+- Implement `Manager` (`risk/manager.go`) with configurable rules:
   - **MaxPositionSize**: Reject if position would exceed N shares per symbol
   - **MaxOpenOrders**: Reject if user has > N pending orders
   - **DailyLossLimit**: Reject if realized + unrealized losses exceed threshold
   - **DuplicateTradeWindow**: Reject if same signal within N seconds
   - **MaxPortfolioExposure**: Reject if total portfolio value exceeds limit
-- All rules implement `RiskRule` interface: `Check(ctx, order, portfolio) error`
-- RiskManager runs all rules, returns first failure
+- All rules implement `domain.RiskRule` interface (defined in `domain/ports.go`): `Check(ctx, order, portfolio) error`
+- `Manager` runs all rules, returns first failure
 - Log every risk check (pass/fail) for audit trail
 
 ---
@@ -425,8 +429,9 @@ TradeKai/
 - `websocket.service.ts`:
   - Auto-reconnecting WebSocket with exponential backoff
   - Subscribes to channels: `ticks:<symbol>`, `orders:<user_id>`, `signals:<user_id>`
-  - Exposes Angular signals for each data stream
+  - Exposes `readonly` Angular signals via `asReadonly()` for each data stream
   - Connection state signal (connecting, connected, disconnected, error)
+  - Uses `inject()` for DI — no constructor parameters
   - Heartbeat/ping handling
 
 ---
@@ -461,6 +466,11 @@ TradeKai/
   - API endpoint tests with httptest
   - WebSocket connection/subscription tests
 - **Table-driven tests** for all indicator edge cases
+- Use `github.com/google/go-cmp/cmp` with `cmp.Diff` for struct comparisons — not `reflect.DeepEqual`
+- Use `errors.Is` / `errors.As` for error assertions — not string comparison
+- Mark all test helper functions with `t.Helper()` so failure lines point to the caller
+- Prefer `t.Error` over `t.Fatal` to surface all failures in one run; use `t.Fatal` only when subsequent assertions would be meaningless
+- Test failure message format: `FuncName(input) = got, want expected`
 - Target: >80% coverage on `internal/` packages
 
 ### Step 22: Frontend Testing
@@ -546,6 +556,7 @@ All components connected via Go channels. Each component runs in its own gorouti
 
 - Domain errors are typed (implement error interface with codes)
 - Wrap errors with context using `fmt.Errorf("operation: %w", err)`
+- Check errors using `errors.Is(err, target)` and `errors.As(err, &target)` — never compare with `==` directly (breaks through wrapped errors)
 - Log at the boundary (handler level), not deep in business logic
 - Circuit breaker for exchange connections (open after 5 consecutive failures, half-open after 30s)
 
@@ -558,16 +569,49 @@ All components connected via Go channels. Each component runs in its own gorouti
 
 ---
 
+### 6. Go Coding Conventions
+
+- **Interfaces in `domain/ports.go`**: All port interfaces (`MarketDataProvider`, `OrderExecutor`, `Strategy`, `RiskRule`, `Indicator`) live in `domain/ports.go`. Implementing packages do not define the interfaces they satisfy — Go idiom: “the consumer defines the interface”
+- **Accept interfaces, return concrete types**: Constructors return concrete types, not interfaces. `func NewService(...) *Service`, not `func NewService(...) ServiceInterface`
+- **No stuttering names**: Types must not repeat their package name. `order.Service` (not `order.OrderService`), `risk.Manager` (not `risk.RiskManager`), `strategy.Engine` (not `strategy.StrategyEngine`)
+- **Short receiver names**: 1–2 letter abbreviations. `func (s *Service) PlaceOrder(...)`, `func (e *Engine) Evaluate(...)`, `func (m *Manager) Check(...)`
+- **Error strings**: Lowercase, no trailing punctuation. `"insufficient funds"` not `"Insufficient funds."` (sentinel names like `ErrInsufficientFunds` remain UpperCamelCase)
+- **Error checking**: Use `errors.Is(err, target)` and `errors.As(err, &target)` — never `err == ErrSomething` (fails through wrapped errors)
+- **No `context.Context` in structs**: Never store context in a struct field. Pass as first method parameter: `func (s *Service) PlaceOrder(ctx context.Context, ...)`
+- **Import grouping** (enforced by `goimports`): stdlib → external packages → internal packages, each group separated by a blank line
+- **Goroutine lifetimes**: Every goroutine must have a documented exit path; use `context.Context` cancellation + `errgroup`
+- **Synchronous functions preferred**: Internal functions should be synchronous by default; callers add concurrency via goroutines when needed
+
+### 7. Angular/TypeScript Coding Conventions
+
+- **`inject()` for DI**: All Angular services and components use `inject()` function — not constructor parameter injection. `private readonly http = inject(HttpClient)` instead of `constructor(private http: HttpClient)`
+- **`httpResource()` for reactive data**: Use Angular 21’s `httpResource()` for GET endpoints needing reactive signal data (`portfolioResource`, `strategiesResource`). Use `HttpClient` directly only for mutations (POST/PUT/DELETE)
+- **Signal patterns** (Angular 21 standard):
+  - `signal()` — writable local state
+  - `computed()` — derived state that auto-updates
+  - `linkedSignal()` — dependent state that resets when source changes
+  - `resource()` / `httpResource()` — async reactive data with `.loading`, `.error`, `.value` status signals
+  - `asReadonly()` — expose service state as read-only: `readonly positions = this._positions.asReadonly()`
+- **Component member visibility**:
+  - `protected` for members accessed only in the component’s own template (not `public`)
+  - `readonly` for Angular-set properties: `readonly userId = input.required<string>()`
+  - `private` for implementation details never accessed in the template
+- **Named exports only**: No `export default`. All components, services, and pipes use named exports
+- **`interface` over `type` for object shapes**: Model files use `interface Order { ... }` not `type Order = { ... }`
+- **`import type` for type-only imports**: `import type { Order } from '../shared/models/order.model'`
+- **No `I`-prefixed interfaces**: `interface AuthState` not `interface IAuthState`
+- **Strict TypeScript**: `tsconfig.json` must enable `strict: true` — no implicit `any`; use `unknown` for truly unknown values
+
+---
+
 ## Relevant Files (Critical Implementation References)
 
 - `backend/cmd/server/main.go` — Wire all services, graceful shutdown with signal handling
 - `backend/internal/domain/` — Pure domain types, zero external deps
-- `backend/internal/market/provider.go` — `MarketDataProvider` interface (core abstraction)
+- `backend/internal/domain/ports.go` — All port interfaces: `MarketDataProvider`, `OrderExecutor`, `Strategy`, `RiskRule`, `Indicator`
 - `backend/internal/market/hub.go` — Fan-out pattern with channels
-- `backend/internal/strategy/strategy.go` — `Strategy` interface (pluggable pattern)
 - `backend/internal/strategy/engine.go` — Worker pool, signal generation
 - `backend/internal/order/service.go` — Order lifecycle, idempotency, retry
-- `backend/internal/order/executor.go` — `OrderExecutor` interface
 - `backend/internal/risk/manager.go` — Pre-trade risk checks
 - `backend/internal/store/queries/` — SQL files for sqlc code generation
 - `backend/internal/store/migrations/` — Database schema evolution
@@ -598,7 +642,7 @@ All components connected via Go channels. Each component runs in its own gorouti
 - **sqlc over GORM**: Type-safe generated code, zero reflection, full control over TimescaleDB functions. Shows SQL proficiency. GORM's ORM abstractions don't map well to time-series queries.
 - **TimescaleDB**: Free PostgreSQL extension, demonstrates knowledge of time-series data handling — a differentiator for trading systems.
 - **Alpaca for exchange**: Real brokerage API with free paper trading, more "serious" than crypto-only. Simulated mode for development means no API key needed to run locally.
-- **Constructor-based DI over Wire**: More readable, demonstrates understanding of dependency management without framework magic.
+- **Constructor-based DI over Wire** (Go backend): More readable, demonstrates understanding of dependency management without framework magic. Angular frontend uses `inject()` function (Angular 21 standard) — not constructor parameter injection.
 - **Signals over NgRx**: Angular 21 signals are the modern standard, simpler than NgRx, and show current Angular knowledge.
 - **Modular monolith**: Single deployable binary is simpler to demo and discuss. Internal boundaries via Go interfaces make future extraction trivial.
 
