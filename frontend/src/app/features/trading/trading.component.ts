@@ -1,7 +1,7 @@
 import { Component } from "@angular/core";
-import { StrategyListComponent } from "./components/strategy-list.component";
-import { OrderFormComponent } from "./components/order-form.component";
-import { TradeLogComponent } from "./components/trade-log.component";
+import { StrategyListComponent } from "./strategy-list/strategy-list.component";
+import { OrderFormComponent } from "./order-form/order-form.component";
+import { TradeLogComponent } from "./trade-log/trade-log.component";
 
 @Component({
   selector: "tk-trading",

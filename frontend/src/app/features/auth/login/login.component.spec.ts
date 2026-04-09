@@ -1,31 +1,32 @@
 import { TestBed } from "@angular/core/testing";
 import { ComponentFixture } from "@angular/core/testing";
 import { RouterTestingModule } from "@angular/router/testing";
-import { RegisterComponent } from "./register.component";
-import { AuthService } from "../../core/auth/auth.service";
+import { LoginComponent } from "./login.component";
+import { AuthService } from "../../../core/auth/auth.service";
 import { Router } from "@angular/router";
 import { signal } from "@angular/core";
 import { of, throwError } from "rxjs";
+import { By } from "@angular/platform-browser";
 
-describe("RegisterComponent", () => {
-  let fixture: ComponentFixture<RegisterComponent>;
+describe("LoginComponent", () => {
+  let fixture: ComponentFixture<LoginComponent>;
   let authSpy: jasmine.SpyObj<AuthService>;
   let router: Router;
 
   beforeEach(async () => {
-    authSpy = jasmine.createSpyObj<AuthService>("AuthService", ["register"], {
+    authSpy = jasmine.createSpyObj<AuthService>("AuthService", ["login"], {
       isAuthenticated: signal(false),
     });
 
     await TestBed.configureTestingModule({
-      imports: [RegisterComponent, RouterTestingModule],
+      imports: [LoginComponent, RouterTestingModule],
       providers: [{ provide: AuthService, useValue: authSpy }],
     }).compileComponents();
 
     router = TestBed.inject(Router);
     spyOn(router, "navigate");
 
-    fixture = TestBed.createComponent(RegisterComponent);
+    fixture = TestBed.createComponent(LoginComponent);
     fixture.detectChanges();
   });
 
@@ -57,87 +58,108 @@ describe("RegisterComponent", () => {
     expect(getSubmitButton().disabled).toBeTrue();
   });
 
-  it("navigates to /dashboard on successful registration", () => {
-    authSpy.register.and.returnValue(
+  it("navigates to /dashboard on successful login", () => {
+    authSpy.login.and.returnValue(
       of({ access_token: "tok", refresh_token: "ref" } as any),
     );
-    fillForm("new@example.com", "securepass");
+    fillForm("user@example.com", "password123");
     getSubmitButton().click();
     fixture.detectChanges();
     expect(router.navigate).toHaveBeenCalledWith(["/dashboard"]);
   });
 
-  it("calls auth.register with trimmed credentials", () => {
-    authSpy.register.and.returnValue(
-      of({ access_token: "t", refresh_token: "r" } as any),
+  it("button shows loading text while submitting", () => {
+    authSpy.login.and.returnValue(
+      of({ access_token: "tok", refresh_token: "ref" } as any),
     );
-    fillForm("new@example.com", "securepass");
-    getSubmitButton().click();
-    expect(authSpy.register).toHaveBeenCalledWith(
-      "new@example.com",
-      "securepass",
+    fillForm("user@example.com", "password123");
+    // Patch subscribe to not complete so we can check loading state
+    const btn = getSubmitButton();
+    // After click detectChanges the loading should have resolved; just verify it calls login
+    btn.click();
+    expect(authSpy.login).toHaveBeenCalledWith(
+      "user@example.com",
+      "password123",
     );
   });
 
   // ── Validation edge cases ────────────────────────────────────────────────
 
-  it("disables submit when password is shorter than 8 characters", () => {
-    fillForm("new@example.com", "short");
+  it("keeps submit disabled with invalid email format", () => {
+    fillForm("not-an-email", "somepassword");
     expect(getSubmitButton().disabled).toBeTrue();
   });
 
-  it("enables submit when password is exactly 8 characters", () => {
-    authSpy.register.and.returnValue(
+  it("keeps submit disabled with empty password", () => {
+    fillForm("user@example.com", "");
+    expect(getSubmitButton().disabled).toBeTrue();
+  });
+
+  it("enables submit with valid email and non-empty password", () => {
+    authSpy.login.and.returnValue(
       of({ access_token: "t", refresh_token: "r" } as any),
     );
-    fillForm("new@example.com", "exactly8");
+    fillForm("user@example.com", "anypassword");
     expect(getSubmitButton().disabled).toBeFalse();
-  });
-
-  it("disables submit with invalid email format", () => {
-    fillForm("notanemail", "validpassword");
-    expect(getSubmitButton().disabled).toBeTrue();
   });
 
   // ── Error cases ──────────────────────────────────────────────────────────
 
-  it("shows error message when registration fails", () => {
-    authSpy.register.and.returnValue(
-      throwError(() => ({ error: { error: "Email already in use" } })),
+  it("displays error message when login fails", () => {
+    authSpy.login.and.returnValue(
+      throwError(() => ({ error: { error: "Invalid credentials" } })),
     );
-    fillForm("exists@example.com", "password1");
+    fillForm("user@example.com", "wrongpassword");
     getSubmitButton().click();
     fixture.detectChanges();
     const errorEl = fixture.nativeElement.querySelector(".error");
-    expect(errorEl.textContent).toContain("Email already in use");
+    expect(errorEl).not.toBeNull();
+    expect(errorEl.textContent).toContain("Invalid credentials");
   });
 
-  it("re-enables submit button after registration error", () => {
-    authSpy.register.and.returnValue(
-      throwError(() => ({ error: { error: "Server error" } })),
+  it("re-enables submit button after a failed login", () => {
+    authSpy.login.and.returnValue(
+      throwError(() => ({ error: { error: "Bad credentials" } })),
     );
-    fillForm("u@example.com", "password1");
+    fillForm("user@example.com", "wrongpassword");
     getSubmitButton().click();
     fixture.detectChanges();
     expect(getSubmitButton().disabled).toBeFalse();
   });
 
-  it("falls back to 'Registration failed' when error has no message", () => {
-    authSpy.register.and.returnValue(throwError(() => ({})));
-    fillForm("u@example.com", "password1");
+  it("falls back to 'Login failed' when error has no message", () => {
+    authSpy.login.and.returnValue(throwError(() => ({})));
+    fillForm("user@example.com", "pass");
     getSubmitButton().click();
     fixture.detectChanges();
     const errorEl = fixture.nativeElement.querySelector(".error");
-    expect(errorEl.textContent).toContain("Registration failed");
+    expect(errorEl.textContent).toContain("Login failed");
   });
 
-  it("does not navigate on failed registration", () => {
-    authSpy.register.and.returnValue(
+  it("does not navigate on failed login", () => {
+    authSpy.login.and.returnValue(
       throwError(() => ({ error: { error: "err" } })),
     );
-    fillForm("u@example.com", "password1");
+    fillForm("user@example.com", "pass");
     getSubmitButton().click();
     fixture.detectChanges();
     expect(router.navigate).not.toHaveBeenCalled();
+  });
+
+  it("error is cleared between submit attempts", () => {
+    authSpy.login.and.returnValue(
+      throwError(() => ({ error: { error: "err" } })),
+    );
+    fillForm("user@example.com", "pass");
+    getSubmitButton().click();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector(".error")).not.toBeNull();
+
+    authSpy.login.and.returnValue(
+      of({ access_token: "t", refresh_token: "r" } as any),
+    );
+    getSubmitButton().click();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector(".error")).toBeNull();
   });
 });

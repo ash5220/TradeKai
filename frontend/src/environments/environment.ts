@@ -1,8 +1,6 @@
-export interface Environment {
-  production: boolean;
-  apiUrl: string;
-  wsUrl: string;
-}
+import type { Environment } from "./environment.interface";
+
+export type { Environment };
 
 export const environment: Environment = {
   production: false,
