@@ -63,19 +63,19 @@ flowchart LR
 
 ## Technology Stack
 
-| Layer | Technology |
-| --- | --- |
-| Backend | Go 1.23, Gin |
-| Database | PostgreSQL 16 + TimescaleDB |
-| Query layer | sqlc |
-| Auth | JWT + bcrypt |
-| Realtime | gorilla/websocket |
-| Logging | Zap |
-| Metrics | Prometheus |
-| Frontend | Angular 21 (standalone + signals) |
-| Charts | Lightweight Charts (TradingView) |
-| Deployment | Docker, docker compose, nginx |
-| CI | GitHub Actions |
+| Layer       | Technology                        |
+| ----------- | --------------------------------- |
+| Backend     | Go 1.23, Gin                      |
+| Database    | PostgreSQL 16 + TimescaleDB       |
+| Query layer | sqlc                              |
+| Auth        | JWT + bcrypt                      |
+| Realtime    | gorilla/websocket                 |
+| Logging     | Zap                               |
+| Metrics     | Prometheus                        |
+| Frontend    | Angular 21 (standalone + signals) |
+| Charts      | Lightweight Charts (TradingView)  |
+| Deployment  | Docker, docker compose, nginx     |
+| CI          | GitHub Actions                    |
 
 ## Quick Start (Development)
 
@@ -179,21 +179,21 @@ Health and metrics:
 
 ## Key Endpoints
 
-| Method | Path | Description |
-| --- | --- | --- |
-| POST | `/api/v1/auth/register` | Register user |
-| POST | `/api/v1/auth/login` | Login |
-| POST | `/api/v1/auth/refresh` | Refresh token |
-| GET | `/api/v1/market/candles/:symbol` | Historical candles |
-| POST | `/api/v1/orders` | Place order |
-| GET | `/api/v1/orders` | List orders |
-| DELETE | `/api/v1/orders/:id` | Cancel order |
-| GET | `/api/v1/portfolio/positions` | Open positions |
-| GET | `/api/v1/portfolio/pnl` | PnL summary |
-| GET | `/api/v1/strategies` | Strategies list |
-| POST | `/api/v1/strategies/:id/start` | Start strategy |
-| POST | `/api/v1/strategies/:id/stop` | Stop strategy |
-| GET | `/ws?token=<access_token>` | WebSocket session |
+| Method | Path                             | Description        |
+| ------ | -------------------------------- | ------------------ |
+| POST   | `/api/v1/auth/register`          | Register user      |
+| POST   | `/api/v1/auth/login`             | Login              |
+| POST   | `/api/v1/auth/refresh`           | Refresh token      |
+| GET    | `/api/v1/market/candles/:symbol` | Historical candles |
+| POST   | `/api/v1/orders`                 | Place order        |
+| GET    | `/api/v1/orders`                 | List orders        |
+| DELETE | `/api/v1/orders/:id`             | Cancel order       |
+| GET    | `/api/v1/portfolio/positions`    | Open positions     |
+| GET    | `/api/v1/portfolio/pnl`          | PnL summary        |
+| GET    | `/api/v1/strategies`             | Strategies list    |
+| POST   | `/api/v1/strategies/:id/start`   | Start strategy     |
+| POST   | `/api/v1/strategies/:id/stop`    | Stop strategy      |
+| GET    | `/ws?token=<access_token>`       | WebSocket session  |
 
 ## WebSocket Protocol
 
@@ -220,20 +220,20 @@ Message examples:
 
 Key backend environment variables:
 
-| Variable | Description |
-| --- | --- |
-| `SERVER_MODE` | `development`, `staging`, or `production` |
-| `DATABASE_URL` | PostgreSQL connection string |
-| `DATABASE_MAX_CONNECTIONS` | DB pool max size |
-| `DATABASE_MIN_CONNECTIONS` | DB pool min size |
-| `JWT_SECRET` | JWT signing secret (required, 32+ chars) |
-| `JWT_ACCESS_TTL` | Access token TTL |
-| `JWT_REFRESH_TTL` | Refresh token TTL |
-| `CORS_ALLOWED_ORIGINS` | Comma-separated allowed origins |
-| `RATE_LIMIT_API` | API requests per minute per client |
-| `RATE_LIMIT_AUTH` | Auth requests per minute per client |
-| `MARKET_DATA_PROVIDER` | `simulated` or `alpaca` |
-| `ORDER_EXECUTOR` | `simulated` or `alpaca` |
+| Variable                   | Description                               |
+| -------------------------- | ----------------------------------------- |
+| `SERVER_MODE`              | `development`, `staging`, or `production` |
+| `DATABASE_URL`             | PostgreSQL connection string              |
+| `DATABASE_MAX_CONNECTIONS` | DB pool max size                          |
+| `DATABASE_MIN_CONNECTIONS` | DB pool min size                          |
+| `JWT_SECRET`               | JWT signing secret (required, 32+ chars)  |
+| `JWT_ACCESS_TTL`           | Access token TTL                          |
+| `JWT_REFRESH_TTL`          | Refresh token TTL                         |
+| `CORS_ALLOWED_ORIGINS`     | Comma-separated allowed origins           |
+| `RATE_LIMIT_API`           | API requests per minute per client        |
+| `RATE_LIMIT_AUTH`          | Auth requests per minute per client       |
+| `MARKET_DATA_PROVIDER`     | `simulated` or `alpaca`                   |
+| `ORDER_EXECUTOR`           | `simulated` or `alpaca`                   |
 
 See `.env.example` for full list and sample production overrides.
 
