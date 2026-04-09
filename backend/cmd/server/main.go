@@ -104,7 +104,8 @@ func main() {
 
 	// ── Services ──────────────────────────────────────────────────────────────
 	authSvc := auth.NewService(db, jwtManager)
-	orderSvc := order.NewService(orderExecutor, riskManager, db, wsHub, log)
+	auditLog := log.Named("trade_audit")
+	orderSvc := order.NewService(orderExecutor, riskManager, db, wsHub, log, auditLog)
 
 	// ── Strategy engine ───────────────────────────────────────────────────────
 	stratEngine := strategy.NewEngine(marketHub, log)
@@ -147,7 +148,7 @@ func main() {
 	}
 
 	// System (no auth, separate rate limit)
-	systemHandler := handler.NewSystemHandler(db)
+	systemHandler := handler.NewSystemHandler(db, marketHub)
 	v1.GET("/health", systemHandler.Health)
 
 	// Protected routes

@@ -4,6 +4,7 @@ package order
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -13,6 +14,7 @@ import (
 	"github.com/rashevskyv/tradekai/internal/domain"
 	"github.com/rashevskyv/tradekai/internal/risk"
 	"github.com/rashevskyv/tradekai/internal/store/generated"
+	"github.com/rashevskyv/tradekai/internal/telemetry"
 	"github.com/rashevskyv/tradekai/internal/ws"
 )
 
@@ -23,6 +25,7 @@ type Service struct {
 	queries  *generated.Queries
 	hub      *ws.Hub
 	log      *zap.Logger
+	audit    *zap.Logger
 }
 
 // NewService creates an order Service.
@@ -32,13 +35,19 @@ func NewService(
 	db *pgxpool.Pool,
 	hub *ws.Hub,
 	log *zap.Logger,
+	audit *zap.Logger,
 ) *Service {
+	if audit == nil {
+		audit = log.Named("trade_audit")
+	}
+
 	return &Service{
 		executor: executor,
 		risk:     riskManager,
 		queries:  generated.New(db),
 		hub:      hub,
 		log:      log,
+		audit:    audit,
 	}
 }
 
@@ -58,9 +67,21 @@ func (s *Service) PlaceFromSignal(ctx context.Context, userID uuid.UUID, signal 
 		UpdatedAt:      time.Now(),
 	}
 
+	s.audit.Info("order_received",
+		zap.Stringer("user", userID),
+		zap.String("symbol", order.Symbol),
+		zap.String("side", string(order.Side)),
+		zap.String("type", string(order.Type)),
+		zap.Float64("qty", order.Qty),
+		zap.String("idempotency_key", order.IdempotencyKey))
+
 	// Pre-trade risk check
 	if err := s.risk.Check(ctx, order, portfolio); err != nil {
 		s.log.Info("order rejected by risk",
+			zap.Stringer("user", userID),
+			zap.String("symbol", order.Symbol),
+			zap.Error(err))
+		s.audit.Info("order_rejected_risk",
 			zap.Stringer("user", userID),
 			zap.String("symbol", order.Symbol),
 			zap.Error(err))
@@ -89,9 +110,16 @@ func (s *Service) PlaceFromSignal(ctx context.Context, userID uuid.UUID, signal 
 		return nil, fmt.Errorf("persist order: %w", err)
 	}
 	order.ID = dbOrder.ID
+	s.recordStatus(order.Status)
+	s.audit.Info("order_persisted",
+		zap.Stringer("order_id", order.ID),
+		zap.Stringer("user", userID),
+		zap.String("symbol", order.Symbol),
+		zap.String("status", string(order.Status)))
 
 	// Submit to exchange with retry
 	var exchangeID string
+	execStart := time.Now()
 	err = withRetry(ctx, s.log, "place order", func() error {
 		id, execErr := s.executor.PlaceOrder(ctx, order)
 		if execErr != nil {
@@ -101,15 +129,25 @@ func (s *Service) PlaceFromSignal(ctx context.Context, userID uuid.UUID, signal 
 		return nil
 	})
 	if err != nil {
+		telemetry.ObserveOrderExecutionLatency(s.executorName(), "error", time.Since(execStart).Seconds())
+
 		// Mark as rejected on persistent failure
 		_, _ = s.queries.UpdateOrderStatus(ctx, generated.UpdateOrderStatusParams{
 			ID:     order.ID,
 			Status: generated.OrderStatusRejected,
 		})
 		order.Status = domain.OrderStatusRejected
+		s.recordStatus(order.Status)
 		s.publishUpdate(order)
+		s.audit.Info("order_rejected_execution",
+			zap.Stringer("order_id", order.ID),
+			zap.Stringer("user", userID),
+			zap.String("symbol", order.Symbol),
+			zap.Error(err))
 		return &order, fmt.Errorf("submit order: %w", err)
 	}
+
+	telemetry.ObserveOrderExecutionLatency(s.executorName(), "success", time.Since(execStart).Seconds())
 
 	// Update to submitted
 	_, _ = s.queries.UpdateOrderStatus(ctx, generated.UpdateOrderStatusParams{
@@ -119,7 +157,14 @@ func (s *Service) PlaceFromSignal(ctx context.Context, userID uuid.UUID, signal 
 	})
 	order.Status = domain.OrderStatusSubmitted
 	order.ExchangeID = exchangeID
+	s.recordStatus(order.Status)
 	s.publishUpdate(order)
+	s.audit.Info("order_submitted",
+		zap.Stringer("order_id", order.ID),
+		zap.Stringer("user", userID),
+		zap.String("symbol", order.Symbol),
+		zap.String("exchange_id", exchangeID),
+		zap.String("status", string(order.Status)))
 
 	return &order, nil
 }
@@ -140,6 +185,14 @@ func (s *Service) CancelOrder(ctx context.Context, orderID uuid.UUID) error {
 		ID:     orderID,
 		Status: generated.OrderStatusCancelled,
 	})
+	if err == nil {
+		s.recordStatus(domain.OrderStatusCancelled)
+		s.audit.Info("order_cancelled",
+			zap.Stringer("order_id", orderID),
+			zap.Stringer("user", dbOrder.UserID),
+			zap.String("symbol", dbOrder.Symbol),
+			zap.String("status", string(domain.OrderStatusCancelled)))
+	}
 	return err
 }
 
@@ -180,4 +233,16 @@ func dbOrderToDomain(o generated.Order) *domain.Order {
 		ord.FilledAt = &t
 	}
 	return ord
+}
+
+func (s *Service) executorName() string {
+	name := fmt.Sprintf("%T", s.executor)
+	if idx := strings.LastIndex(name, "."); idx >= 0 && idx+1 < len(name) {
+		return strings.TrimPrefix(name[idx+1:], "*")
+	}
+	return strings.TrimPrefix(name, "*")
+}
+
+func (s *Service) recordStatus(status domain.OrderStatus) {
+	telemetry.IncOrderStatus(string(status))
 }

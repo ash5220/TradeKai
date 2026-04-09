@@ -5,11 +5,21 @@ import (
 	"context"
 	"fmt"
 	"sync"
+	"time"
 
 	"go.uber.org/zap"
 
 	"github.com/rashevskyv/tradekai/internal/domain"
+	"github.com/rashevskyv/tradekai/internal/telemetry"
 )
+
+// HealthSnapshot contains lightweight exchange connectivity details used by
+// system health endpoints.
+type HealthSnapshot struct {
+	Connected    bool      `json:"connected"`
+	LastTickAt   time.Time `json:"lastTickAt,omitempty"`
+	ActiveStream int       `json:"activeStreamCount"`
+}
 
 // Hub fans out ticks from a single provider to multiple per-symbol subscribers.
 // Subscribers receive ticks via buffered channels; a slow consumer causes the
@@ -20,6 +30,9 @@ type Hub struct {
 
 	mu          sync.RWMutex
 	subscribers map[string][]chan domain.Tick // symbol → subscriber channels
+	lastTickAt  time.Time
+	connected   bool
+	streams     int
 
 	bufSize int // per-subscriber channel capacity
 }
@@ -41,10 +54,18 @@ func (h *Hub) Start(ctx context.Context, symbols []string) error {
 		return fmt.Errorf("hub: connect provider: %w", err)
 	}
 
+	h.mu.Lock()
+	h.connected = true
+	h.streams = len(symbols)
+	h.mu.Unlock()
+
 	for _, sym := range symbols {
 		sym := sym
 		ch, err := h.provider.Subscribe(sym)
 		if err != nil {
+			h.mu.Lock()
+			h.connected = false
+			h.mu.Unlock()
 			return fmt.Errorf("hub: subscribe %s: %w", sym, err)
 		}
 		go h.fanOut(ctx, sym, ch)
@@ -55,6 +76,11 @@ func (h *Hub) Start(ctx context.Context, symbols []string) error {
 	if err := h.provider.Close(); err != nil {
 		h.log.Warn("hub: close provider", zap.Error(err))
 	}
+
+	h.mu.Lock()
+	h.connected = false
+	h.mu.Unlock()
+
 	return nil
 }
 
@@ -97,6 +123,12 @@ func (h *Hub) fanOut(ctx context.Context, symbol string, src <-chan domain.Tick)
 }
 
 func (h *Hub) dispatch(symbol string, tick domain.Tick) {
+	telemetry.IncMarketDataTick(tick.Symbol)
+
+	h.mu.Lock()
+	h.lastTickAt = tick.Timestamp
+	h.mu.Unlock()
+
 	h.mu.RLock()
 	subs := make([]chan domain.Tick, len(h.subscribers[symbol]))
 	copy(subs, h.subscribers[symbol])
@@ -116,5 +148,24 @@ func (h *Hub) dispatch(symbol string, tick domain.Tick) {
 			default:
 			}
 		}
+	}
+}
+
+// HealthSnapshot returns exchange stream health with a simple stale-tick check.
+func (h *Hub) HealthSnapshot(staleAfter time.Duration) HealthSnapshot {
+	h.mu.RLock()
+	connected := h.connected
+	lastTickAt := h.lastTickAt
+	streams := h.streams
+	h.mu.RUnlock()
+
+	if connected && !lastTickAt.IsZero() && staleAfter > 0 && time.Since(lastTickAt) > staleAfter {
+		connected = false
+	}
+
+	return HealthSnapshot{
+		Connected:    connected,
+		LastTickAt:   lastTickAt,
+		ActiveStream: streams,
 	}
 }

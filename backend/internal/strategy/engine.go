@@ -11,6 +11,7 @@ import (
 
 	"github.com/rashevskyv/tradekai/internal/domain"
 	"github.com/rashevskyv/tradekai/internal/market"
+	"github.com/rashevskyv/tradekai/internal/telemetry"
 )
 
 // symbolWorker holds per-symbol indicator state for a running strategy.
@@ -27,9 +28,9 @@ type Engine struct {
 	log     *zap.Logger
 	signals chan domain.TradeSignal
 
-	mu       sync.RWMutex
-	workers  map[string]map[string]*symbolWorker // strategyName → symbol → worker
-	cancels  map[string]context.CancelFunc        // strategyName → cancel fn
+	mu      sync.RWMutex
+	workers map[string]map[string]*symbolWorker // strategyName → symbol → worker
+	cancels map[string]context.CancelFunc       // strategyName → cancel fn
 }
 
 // NewEngine creates a strategy Engine.
@@ -178,6 +179,9 @@ func (e *Engine) evaluate(w *symbolWorker, candle domain.Candle) {
 	if sig.Type == domain.SignalHold {
 		return
 	}
+
+	telemetry.IncStrategySignal(sig.Strategy, sig.Symbol, string(sig.Type))
+
 	select {
 	case e.signals <- sig:
 	default:

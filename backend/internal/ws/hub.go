@@ -9,6 +9,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"go.uber.org/zap"
+
+	"github.com/rashevskyv/tradekai/internal/telemetry"
 )
 
 const (
@@ -40,7 +42,7 @@ type Hub struct {
 	log *zap.Logger
 
 	mu      sync.RWMutex
-	clients map[uuid.UUID]*Client      // connID → client
+	clients map[uuid.UUID]*Client            // connID → client
 	rooms   map[string]map[uuid.UUID]*Client // room → connID → client
 
 	register   chan *Client
@@ -73,6 +75,7 @@ func (h *Hub) Run() {
 		case c := <-h.register:
 			h.mu.Lock()
 			h.clients[c.id] = c
+			telemetry.SetActiveWebSocketConnections(len(h.clients))
 			h.mu.Unlock()
 			h.log.Debug("ws client registered", zap.Stringer("id", c.id))
 
@@ -80,6 +83,7 @@ func (h *Hub) Run() {
 			h.mu.Lock()
 			if _, ok := h.clients[c.id]; ok {
 				delete(h.clients, c.id)
+				telemetry.SetActiveWebSocketConnections(len(h.clients))
 				for room, members := range h.rooms {
 					delete(members, c.id)
 					if len(members) == 0 {
