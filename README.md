@@ -1,223 +1,291 @@
 # TradeKai
 
-A production-grade, multi-user algorithmic trading platform built with Go (Gin) and Angular 21.
+TradeKai is a real-time algorithmic trading platform built as a production-style portfolio project using Go (Gin), Angular 21, PostgreSQL/TimescaleDB, WebSockets, and Docker.
 
 ## Architecture
+
+### System Overview
 
 ```mermaid
 graph TD
     subgraph Frontend["Angular 21 SPA"]
-        Auth[Auth Feature]
-        Dashboard[Dashboard Feature]
-        Trading[Trading Feature]
-        History[History Feature]
+        Auth[Auth]
+        Dashboard[Dashboard]
+        Trading[Trading]
+        History[History]
     end
 
-    subgraph API["Go / Gin REST API"]
-        AuthH[Auth Handlers]
-        OrderH[Order Handlers]
-        PortfolioH[Portfolio Handlers]
-        StrategyH[Strategy Handlers]
-        MarketH[Market Handlers]
-        WSH[WebSocket Handler]
+    subgraph Edge["nginx (TLS Termination)"]
+        Nginx[Reverse Proxy]
     end
 
-    subgraph Core["Domain Core"]
-        StrategyEngine[Strategy Engine]
-        RiskManager[Risk Manager]
-        OrderService[Order Service]
-        Indicators[Technical Indicators]
+    subgraph API["Go / Gin Backend"]
+        REST[REST + Swagger]
+        WS[WebSocket Hub]
+        OMS[Order Service]
+        Risk[Risk Manager]
+        Engine[Strategy Engine]
     end
 
-    subgraph Infra["Infrastructure"]
-        Postgres[(PostgreSQL 16\nTimescaleDB)]
-        AlpacaAPI[Alpaca API]
-        SimMarket[Simulated Market]
-        Prometheus[Prometheus]
+    subgraph Data["Data Layer"]
+        PG[(PostgreSQL + TimescaleDB)]
+        Alpaca[Alpaca]
+        Sim[Simulated Providers]
     end
 
-    Frontend -- "HTTP/WebSocket" --> API
-    API --> Core
-    Core --> Infra
+    Frontend --> Nginx
+    Nginx --> REST
+    Nginx --> WS
+    REST --> OMS
+    OMS --> Risk
+    Engine --> OMS
+    REST --> PG
+    OMS --> PG
+    Engine --> Alpaca
+    Engine --> Sim
+```
+
+### Event Pipeline
+
+```mermaid
+flowchart LR
+    Market[Market Provider] --> Hub[Market Hub]
+    Hub --> Agg[Candle Aggregator]
+    Agg --> TSDB[(TimescaleDB)]
+    Agg --> Strat[Strategy Engine]
+    Strat --> Sig[Trade Signal]
+    Sig --> Risk[Risk Checks]
+    Risk --> Order[Order Service]
+    Order --> Exec[Order Executor]
+    Order --> WS[WebSocket Hub]
+    WS --> UI[Angular Dashboard]
 ```
 
 ## Technology Stack
 
-| Layer         | Technology                                |
-| ------------- | ----------------------------------------- |
-| Backend       | Go 1.23, Gin v1.12                        |
-| Database      | PostgreSQL 16 + TimescaleDB (hypertables) |
-| ORM / SQL     | sqlc v1.30 (type-safe query generation)   |
-| Migrations    | golang-migrate                            |
-| Auth          | JWT (golang-jwt/jwt v5) + bcrypt          |
-| WebSocket     | gorilla/websocket (room-based pub/sub)    |
-| Config        | Viper (`.env` + env vars)                 |
-| Logging       | Zap (JSON prod / console dev)             |
-| Observability | Prometheus + OpenTelemetry                |
-| Frontend      | Angular 21 (standalone + signals)         |
-| Charts        | Lightweight Charts (TradingView)          |
-| CI            | GitHub Actions                            |
-| Deploy        | Docker + docker-compose + nginx           |
-
-## Project Structure
-
-```
-TradeKai/
-├── backend/
-│   ├── cmd/server/          # Entry point, DI wiring, graceful shutdown
-│   └── internal/
-│       ├── auth/            # JWT manager, service, middleware
-│       ├── config/          # Viper config, Zap logger
-│       ├── domain/          # Pure domain types & port interfaces (zero external deps)
-│       ├── handler/         # Gin HTTP handlers
-│       ├── market/          # MarketDataProvider adapters (simulated, Alpaca)
-│       ├── middleware/       # CORS, rate-limiter, request-ID
-│       ├── order/           # Order service, executors, retry logic
-│       ├── risk/            # Pre-trade risk rules & manager
-│       ├── store/           # DB migrations, SQL queries, sqlc generated code
-│       ├── strategy/        # Technical indicators, strategies, engine
-│       └── ws/              # WebSocket hub & client
-├── frontend/
-│   └── src/app/
-│       ├── core/            # Auth service/guard/interceptor, WS service, API service
-│       ├── features/        # auth, dashboard, trading, history
-│       └── shared/          # Models (Order, Position, Tick)
-├── deployments/
-│   ├── docker-compose.yml   # Production
-│   ├── docker-compose.dev.yml
-│   └── nginx/nginx.conf
-└── .github/workflows/ci.yml
-```
+| Layer | Technology |
+| --- | --- |
+| Backend | Go 1.23, Gin |
+| Database | PostgreSQL 16 + TimescaleDB |
+| Query layer | sqlc |
+| Auth | JWT + bcrypt |
+| Realtime | gorilla/websocket |
+| Logging | Zap |
+| Metrics | Prometheus |
+| Frontend | Angular 21 (standalone + signals) |
+| Charts | Lightweight Charts (TradingView) |
+| Deployment | Docker, docker compose, nginx |
+| CI | GitHub Actions |
 
 ## Quick Start (Development)
 
 ### Prerequisites
 
-- Docker & Docker Compose
+- Docker Desktop (with Compose)
 - Go 1.23+
 - Node.js 22+
-- [sqlc](https://sqlc.dev/) (`go install github.com/sqlc-dev/sqlc/cmd/sqlc@latest`)
-- [golang-migrate CLI](https://github.com/golang-migrate/migrate)
+- `sqlc` CLI
+- `migrate` CLI
 
-### 1. Environment
+### 1) Configure environment
 
 ```bash
 cp .env.example .env
-# Edit .env and set JWT_SECRET and optionally ALPACA_API_KEY / ALPACA_API_SECRET
 ```
 
-### 2. Start Infrastructure
+Set at minimum:
+
+- `DATABASE_URL`
+- `JWT_SECRET` (32+ characters)
+
+### 2) Start database
 
 ```bash
-docker-compose -f deployments/docker-compose.dev.yml up -d postgres
+docker compose -f deployments/docker-compose.yml -f deployments/docker-compose.dev.yml up -d db
 ```
 
-### 3. Run Migrations & Generate Code
+### 3) Run migrations and SQL generation
 
 ```bash
 cd backend
-make migrate-up    # runs all DB migrations
-make sqlc          # generates type-safe Go from SQL queries
+make migrate-up
+make sqlc-generate
 ```
 
-### 4. Start Backend
+### 4) Start backend
 
 ```bash
 cd backend
 make run
-# Listening on :8080
 ```
 
-### 5. Start Frontend Dev Server
+Backend runs on `http://localhost:8080` in dev.
+
+### 5) Start frontend
 
 ```bash
 cd frontend
 npm install
 npm start
-# Proxies /api/* and /ws to localhost:8080
-# Open http://localhost:4200
 ```
 
-### Full Stack (Docker)
+Frontend runs on `http://localhost:4200` and proxies `/api` and `/ws` to backend.
+
+## Production Deployment
+
+### Run full stack
 
 ```bash
-docker-compose -f deployments/docker-compose.yml up --build
-# Open http://localhost
+docker compose -f deployments/docker-compose.yml up --build -d
 ```
 
-## API Reference
+Public entrypoint is nginx on:
 
-Interactive Swagger docs are available at `http://localhost:8080/api/v1/docs/index.html` when the backend is running.
+- `http://localhost` (redirects to HTTPS)
+- `https://localhost`
 
-### Key Endpoints
+### TLS certificate setup
 
-| Method | Path                             | Description                                             |
-| ------ | -------------------------------- | ------------------------------------------------------- |
-| POST   | `/api/v1/auth/register`          | Register a new user                                     |
-| POST   | `/api/v1/auth/login`             | Login, returns JWT token pair                           |
-| POST   | `/api/v1/auth/refresh`           | Refresh access token                                    |
-| GET    | `/api/v1/orders`                 | List orders (paginated)                                 |
-| POST   | `/api/v1/orders`                 | Place a new order                                       |
-| DELETE | `/api/v1/orders/:id`             | Cancel an order                                         |
-| GET    | `/api/v1/portfolio/positions`    | Open positions                                          |
-| GET    | `/api/v1/portfolio/pnl`          | Daily realized P&L                                      |
-| GET    | `/api/v1/market/candles/:symbol` | OHLCV candles                                           |
-| GET    | `/api/v1/strategies`             | List configured strategies                              |
-| POST   | `/api/v1/strategies/:name/start` | Start a strategy                                        |
-| POST   | `/api/v1/strategies/:name/stop`  | Stop a strategy                                         |
-| GET    | `/ws`                            | WebSocket connection (requires `?token=<access_token>`) |
+nginx expects cert files in `deployments/nginx/certs`:
+
+- `fullchain.pem`
+- `privkey.pem`
+
+For local/demo usage, place self-signed certs there.
+For Let's Encrypt, use ACME challenge path mounted at `deployments/nginx/certbot`.
+
+### Production configuration defaults
+
+The production compose file sets hardened defaults for:
+
+- `SERVER_MODE=production`
+- `LOG_FORMAT=json`
+- stricter CORS origin default
+- higher DB pool and rate-limit defaults
+
+Override these through `.env` in your target environment.
+
+## API Documentation
+
+Swagger UI:
+
+- direct backend: `http://localhost:8080/api/v1/docs/index.html`
+- via nginx: `https://localhost/api/v1/docs/index.html`
+
+Health and metrics:
+
+- `GET /api/v1/health`
+- `GET /metrics` (network-restricted in nginx)
+
+## Key Endpoints
+
+| Method | Path | Description |
+| --- | --- | --- |
+| POST | `/api/v1/auth/register` | Register user |
+| POST | `/api/v1/auth/login` | Login |
+| POST | `/api/v1/auth/refresh` | Refresh token |
+| GET | `/api/v1/market/candles/:symbol` | Historical candles |
+| POST | `/api/v1/orders` | Place order |
+| GET | `/api/v1/orders` | List orders |
+| DELETE | `/api/v1/orders/:id` | Cancel order |
+| GET | `/api/v1/portfolio/positions` | Open positions |
+| GET | `/api/v1/portfolio/pnl` | PnL summary |
+| GET | `/api/v1/strategies` | Strategies list |
+| POST | `/api/v1/strategies/:id/start` | Start strategy |
+| POST | `/api/v1/strategies/:id/stop` | Stop strategy |
+| GET | `/ws?token=<access_token>` | WebSocket session |
 
 ## WebSocket Protocol
 
-Connect with `?token=<JWT>`. Send JSON messages to subscribe/unsubscribe:
+Subscribe/unsubscribe payloads:
 
 ```json
-{ "action": "subscribe",   "room": "ticks:AAPL" }
+{ "action": "subscribe", "room": "ticks:AAPL" }
 { "action": "unsubscribe", "room": "ticks:AAPL" }
 ```
 
-Rooms: `ticks:<SYMBOL>`, `orders:<USER_ID>`
+Room examples:
 
-Server broadcasts:
+- `ticks:AAPL`
+- `orders:<user_id>`
+
+Message examples:
 
 ```json
-{ "type": "tick",         "payload": { "symbol": "AAPL", "price": 193.44, "ts": "..." } }
-{ "type": "order_update", "payload": { "id": "...", "status": "filled", ... } }
+{ "type": "tick", "payload": { "symbol": "AAPL", "price": 193.44 } }
+{ "type": "order_update", "payload": { "id": "...", "status": "submitted" } }
 ```
 
-## Configuration
+## Configuration Reference
 
-All settings are loaded from a `.env` file (see `.env.example`). Key variables:
+Key backend environment variables:
 
-| Variable                 | Default       | Description                                         |
-| ------------------------ | ------------- | --------------------------------------------------- |
-| `DATABASE_URL`           | —             | PostgreSQL connection string (required)             |
-| `JWT_SECRET`             | —             | Secret key for JWT signing (required, min 32 chars) |
-| `MARKET_PROVIDER`        | `simulated`   | `simulated` or `alpaca`                             |
-| `ORDER_PROVIDER`         | `simulated`   | `simulated` or `alpaca`                             |
-| `ALPACA_API_KEY`         | —             | Alpaca paper-trading key                            |
-| `ALPACA_API_SECRET`      | —             | Alpaca paper-trading secret                         |
-| `RISK_MAX_POSITION_SIZE` | `10000`       | Max $ per position                                  |
-| `RISK_DAILY_LOSS_LIMIT`  | `5000`        | Max daily loss before trading halts                 |
-| `SERVER_PORT`            | `8080`        | HTTP listen port                                    |
-| `LOG_LEVEL`              | `info`        | `debug` / `info` / `warn` / `error`                 |
-| `LOG_ENV`                | `development` | `development` (console) or `production` (JSON)      |
+| Variable | Description |
+| --- | --- |
+| `SERVER_MODE` | `development`, `staging`, or `production` |
+| `DATABASE_URL` | PostgreSQL connection string |
+| `DATABASE_MAX_CONNECTIONS` | DB pool max size |
+| `DATABASE_MIN_CONNECTIONS` | DB pool min size |
+| `JWT_SECRET` | JWT signing secret (required, 32+ chars) |
+| `JWT_ACCESS_TTL` | Access token TTL |
+| `JWT_REFRESH_TTL` | Refresh token TTL |
+| `CORS_ALLOWED_ORIGINS` | Comma-separated allowed origins |
+| `RATE_LIMIT_API` | API requests per minute per client |
+| `RATE_LIMIT_AUTH` | Auth requests per minute per client |
+| `MARKET_DATA_PROVIDER` | `simulated` or `alpaca` |
+| `ORDER_EXECUTOR` | `simulated` or `alpaca` |
 
-## Running Tests
+See `.env.example` for full list and sample production overrides.
+
+## Testing and CI
+
+### Backend
 
 ```bash
-# Backend unit tests
-cd backend && make test
-
-# Backend with race detector
-cd backend && go test -race ./...
-
-# Frontend unit tests
-cd frontend && npm test
-
-# Frontend with coverage
-cd frontend && npm run test -- --code-coverage
+cd backend
+go test ./...
+go test -tags=integration ./internal/integration/...
 ```
+
+### Frontend
+
+```bash
+cd frontend
+npm test
+npm run build -- --configuration production
+```
+
+GitHub Actions workflow in `.github/workflows/ci.yml` runs lint, tests, integration tests, and image builds.
+
+## Screenshots
+
+Add dashboard screenshots here as the UI evolves:
+
+- Login screen
+- Dashboard (chart + positions + PnL)
+- Trading controls and signal log
+
+Recommended path convention:
+
+- `deployments/screenshots/login.png`
+- `deployments/screenshots/dashboard.png`
+- `deployments/screenshots/trading.png`
+
+## Key Technical Decisions
+
+- Gin over Fiber: standard library `net/http` ergonomics and familiarity.
+- sqlc over ORM: explicit SQL, type-safe generated queries, better control for time-series use cases.
+- TimescaleDB: hypertables and compression for market data workloads.
+- Modular monolith: clear internal boundaries with lower operational overhead.
+- Simulated providers: local development without mandatory exchange credentials.
+
+## Performance Characteristics
+
+- Market fan-out uses buffered channels and drop-oldest behavior to prevent slow-consumer backpressure.
+- Strategy execution uses bounded worker-style concurrency with channel-based signal flow.
+- DB access uses pooled pgx connections with configurable min/max bounds.
+- Order execution includes retry with bounded attempts to avoid unbounded latency growth.
+- WebSocket handling uses dedicated read/write pumps per client with heartbeat.
 
 ## License
 
