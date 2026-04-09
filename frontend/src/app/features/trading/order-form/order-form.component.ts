@@ -1,12 +1,11 @@
 import { Component, inject, signal } from "@angular/core";
 import { ReactiveFormsModule, FormBuilder, Validators } from "@angular/forms";
-import { NgClass } from "@angular/common";
 import { ApiService } from "../../../core/api/api.service";
 
 @Component({
   selector: "tk-order-form",
   standalone: true,
-  imports: [ReactiveFormsModule, NgClass],
+  imports: [ReactiveFormsModule],
   templateUrl: "./order-form.component.html",
   styleUrl: "./order-form.component.scss",
 })

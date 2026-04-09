@@ -136,7 +136,7 @@ func (e *Engine) runWorker(
 	stratName, symbol string,
 	w *symbolWorker,
 	tickCh <-chan domain.Tick,
-	candleCh chan<- domain.Candle,
+	candleCh chan domain.Candle,
 ) error {
 	// Use a 1-minute aggregator that writes to candleCh
 	agg := market.NewAggregator(time.Minute, func(c domain.Candle) {
