@@ -13,11 +13,9 @@ describe("RegisterComponent", () => {
   let router: Router;
 
   beforeEach(async () => {
-    authSpy = jasmine.createSpyObj<AuthService>(
-      "AuthService",
-      ["register"],
-      { isAuthenticated: signal(false) },
-    );
+    authSpy = jasmine.createSpyObj<AuthService>("AuthService", ["register"], {
+      isAuthenticated: signal(false),
+    });
 
     await TestBed.configureTestingModule({
       imports: [RegisterComponent, RouterTestingModule],
@@ -60,7 +58,9 @@ describe("RegisterComponent", () => {
   });
 
   it("navigates to /dashboard on successful registration", () => {
-    authSpy.register.and.returnValue(of({ access_token: "tok", refresh_token: "ref" } as any));
+    authSpy.register.and.returnValue(
+      of({ access_token: "tok", refresh_token: "ref" } as any),
+    );
     fillForm("new@example.com", "securepass");
     getSubmitButton().click();
     fixture.detectChanges();
@@ -68,10 +68,15 @@ describe("RegisterComponent", () => {
   });
 
   it("calls auth.register with trimmed credentials", () => {
-    authSpy.register.and.returnValue(of({ access_token: "t", refresh_token: "r" } as any));
+    authSpy.register.and.returnValue(
+      of({ access_token: "t", refresh_token: "r" } as any),
+    );
     fillForm("new@example.com", "securepass");
     getSubmitButton().click();
-    expect(authSpy.register).toHaveBeenCalledWith("new@example.com", "securepass");
+    expect(authSpy.register).toHaveBeenCalledWith(
+      "new@example.com",
+      "securepass",
+    );
   });
 
   // ── Validation edge cases ────────────────────────────────────────────────
@@ -82,7 +87,9 @@ describe("RegisterComponent", () => {
   });
 
   it("enables submit when password is exactly 8 characters", () => {
-    authSpy.register.and.returnValue(of({ access_token: "t", refresh_token: "r" } as any));
+    authSpy.register.and.returnValue(
+      of({ access_token: "t", refresh_token: "r" } as any),
+    );
     fillForm("new@example.com", "exactly8");
     expect(getSubmitButton().disabled).toBeFalse();
   });
@@ -125,7 +132,9 @@ describe("RegisterComponent", () => {
   });
 
   it("does not navigate on failed registration", () => {
-    authSpy.register.and.returnValue(throwError(() => ({ error: { error: "err" } })));
+    authSpy.register.and.returnValue(
+      throwError(() => ({ error: { error: "err" } })),
+    );
     fillForm("u@example.com", "password1");
     getSubmitButton().click();
     fixture.detectChanges();

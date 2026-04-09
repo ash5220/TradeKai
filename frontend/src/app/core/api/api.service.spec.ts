@@ -26,7 +26,10 @@ describe("ApiService", () => {
   it("getOrders() sends GET with default limit=50 and offset=0", () => {
     service.getOrders().subscribe();
     const req = httpMock.expectOne(
-      (r) => r.url === `${base}/orders` && r.params.get("limit") === "50" && r.params.get("offset") === "0",
+      (r) =>
+        r.url === `${base}/orders` &&
+        r.params.get("limit") === "50" &&
+        r.params.get("offset") === "0",
     );
     expect(req.request.method).toBe("GET");
     req.flush([]);
@@ -110,7 +113,9 @@ describe("ApiService", () => {
   });
 
   it("getCandles() appends optional from/to params when provided", () => {
-    service.getCandles("MSFT", "5m", "2024-01-01", "2024-01-02", 100).subscribe();
+    service
+      .getCandles("MSFT", "5m", "2024-01-01", "2024-01-02", 100)
+      .subscribe();
     const req = httpMock.expectOne(
       (r) =>
         r.url === `${base}/market/candles/MSFT` &&
@@ -156,14 +161,20 @@ describe("ApiService", () => {
         done();
       },
     });
-    const req = httpMock.expectOne(
-      (r) => r.url === `${base}/orders`,
+    const req = httpMock.expectOne((r) => r.url === `${base}/orders`);
+    req.flush(
+      { error: "Server Error" },
+      { status: 500, statusText: "Internal Server Error" },
     );
-    req.flush({ error: "Server Error" }, { status: 500, statusText: "Internal Server Error" });
   });
 
   it("placeOrder() propagates HTTP 400 to subscriber", (done) => {
-    const orderReq: PlaceOrderRequest = { symbol: "AAPL", side: "buy", type: "market", qty: 1 };
+    const orderReq: PlaceOrderRequest = {
+      symbol: "AAPL",
+      side: "buy",
+      type: "market",
+      qty: 1,
+    };
     service.placeOrder(orderReq).subscribe({
       error: (err) => {
         expect(err.status).toBe(400);
@@ -171,6 +182,9 @@ describe("ApiService", () => {
       },
     });
     const req = httpMock.expectOne(`${base}/orders`);
-    req.flush({ error: "Bad Request" }, { status: 400, statusText: "Bad Request" });
+    req.flush(
+      { error: "Bad Request" },
+      { status: 400, statusText: "Bad Request" },
+    );
   });
 });

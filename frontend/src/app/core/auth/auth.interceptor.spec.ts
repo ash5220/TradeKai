@@ -3,7 +3,11 @@ import {
   HttpTestingController,
   provideHttpClientTesting,
 } from "@angular/common/http/testing";
-import { HttpClient, provideHttpClient, withInterceptors } from "@angular/common/http";
+import {
+  HttpClient,
+  provideHttpClient,
+  withInterceptors,
+} from "@angular/common/http";
 import { computed } from "@angular/core";
 import { authInterceptor } from "./auth.interceptor";
 import { AuthService } from "./auth.service";
@@ -21,10 +25,14 @@ describe("authInterceptor", () => {
   }
 
   beforeEach(() => {
-    authServiceMock = jasmine.createSpyObj<AuthService>("AuthService", ["logout"], {
-      accessToken: computed(() => "test-token"),
-      isAuthenticated: computed(() => true),
-    });
+    authServiceMock = jasmine.createSpyObj<AuthService>(
+      "AuthService",
+      ["logout"],
+      {
+        accessToken: computed(() => "test-token"),
+        isAuthenticated: computed(() => true),
+      },
+    );
 
     TestBed.configureTestingModule({
       providers: [
@@ -67,14 +75,20 @@ describe("authInterceptor", () => {
   it("calls auth.logout() when the response is 401", () => {
     http.get("/api/protected").subscribe({ error: () => {} });
     const req = httpMock.expectOne("/api/protected");
-    req.flush({ error: "Unauthorized" }, { status: 401, statusText: "Unauthorized" });
+    req.flush(
+      { error: "Unauthorized" },
+      { status: 401, statusText: "Unauthorized" },
+    );
     expect(authServiceMock.logout).toHaveBeenCalled();
   });
 
   it("does NOT call auth.logout() for non-401 errors", () => {
     http.get("/api/data").subscribe({ error: () => {} });
     const req = httpMock.expectOne("/api/data");
-    req.flush({ error: "Server Error" }, { status: 500, statusText: "Internal Server Error" });
+    req.flush(
+      { error: "Server Error" },
+      { status: 500, statusText: "Internal Server Error" },
+    );
     expect(authServiceMock.logout).not.toHaveBeenCalled();
   });
 });

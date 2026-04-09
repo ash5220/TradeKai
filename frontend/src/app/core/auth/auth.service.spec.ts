@@ -55,7 +55,10 @@ describe("AuthService", () => {
     service.register("user@test.com", "password123").subscribe();
     const req = httpMock.expectOne((r) => r.url.includes("/auth/register"));
     expect(req.request.method).toBe("POST");
-    expect(req.request.body).toEqual({ email: "user@test.com", password: "password123" });
+    expect(req.request.body).toEqual({
+      email: "user@test.com",
+      password: "password123",
+    });
 
     req.flush({ access_token: "acc", refresh_token: "ref" });
 
@@ -80,7 +83,10 @@ describe("AuthService", () => {
       },
     });
     const req = httpMock.expectOne((r) => r.url.includes("/auth/register"));
-    req.flush({ error: "Email taken" }, { status: 409, statusText: "Conflict" });
+    req.flush(
+      { error: "Email taken" },
+      { status: 409, statusText: "Conflict" },
+    );
   });
 
   // ── login ─────────────────────────────────────────────────────────────────
@@ -103,7 +109,10 @@ describe("AuthService", () => {
       },
     });
     const req = httpMock.expectOne((r) => r.url.includes("/auth/login"));
-    req.flush({ error: "Unauthorized" }, { status: 401, statusText: "Unauthorized" });
+    req.flush(
+      { error: "Unauthorized" },
+      { status: 401, statusText: "Unauthorized" },
+    );
   });
 
   // ── logout ────────────────────────────────────────────────────────────────

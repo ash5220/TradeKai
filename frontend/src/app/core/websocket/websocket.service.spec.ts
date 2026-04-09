@@ -63,10 +63,14 @@ describe("WebSocketService", () => {
 
     wsSpy = spyOn(window as any, "WebSocket").and.returnValue(fakeWs);
 
-    authServiceMock = jasmine.createSpyObj<AuthService>("AuthService", ["logout"], {
-      accessToken: computed(() => "test-token"),
-      isAuthenticated: computed(() => true),
-    });
+    authServiceMock = jasmine.createSpyObj<AuthService>(
+      "AuthService",
+      ["logout"],
+      {
+        accessToken: computed(() => "test-token"),
+        isAuthenticated: computed(() => true),
+      },
+    );
 
     TestBed.configureTestingModule({
       providers: [
@@ -135,7 +139,12 @@ describe("WebSocketService", () => {
   it("updates ticks signal when a tick message is received", () => {
     service.connect();
     fakeWs.triggerOpen();
-    const tick = { symbol: "AAPL", price: 150, volume: 1000, timestamp: "2024-01-01T00:00:00Z" };
+    const tick = {
+      symbol: "AAPL",
+      price: 150,
+      volume: 1000,
+      timestamp: "2024-01-01T00:00:00Z",
+    };
     fakeWs.triggerMessage({ type: "tick", payload: tick });
     expect(service.ticks().get("AAPL")).toEqual(tick as any);
   });
@@ -143,16 +152,28 @@ describe("WebSocketService", () => {
   it("handles multiple tick messages for different symbols", () => {
     service.connect();
     fakeWs.triggerOpen();
-    fakeWs.triggerMessage({ type: "tick", payload: { symbol: "AAPL", price: 150 } });
-    fakeWs.triggerMessage({ type: "tick", payload: { symbol: "TSLA", price: 200 } });
+    fakeWs.triggerMessage({
+      type: "tick",
+      payload: { symbol: "AAPL", price: 150 },
+    });
+    fakeWs.triggerMessage({
+      type: "tick",
+      payload: { symbol: "TSLA", price: 200 },
+    });
     expect(service.ticks().size).toBe(2);
   });
 
   it("overwrites existing tick for the same symbol", () => {
     service.connect();
     fakeWs.triggerOpen();
-    fakeWs.triggerMessage({ type: "tick", payload: { symbol: "AAPL", price: 150 } });
-    fakeWs.triggerMessage({ type: "tick", payload: { symbol: "AAPL", price: 155 } });
+    fakeWs.triggerMessage({
+      type: "tick",
+      payload: { symbol: "AAPL", price: 150 },
+    });
+    fakeWs.triggerMessage({
+      type: "tick",
+      payload: { symbol: "AAPL", price: 155 },
+    });
     expect(service.ticks().get("AAPL")!.price).toBe(155);
   });
 
@@ -161,7 +182,13 @@ describe("WebSocketService", () => {
   it("prepends order to latestOrders on order_update", () => {
     service.connect();
     fakeWs.triggerOpen();
-    const order = { id: "o1", symbol: "AAPL", status: "filled", qty: 1, side: "buy" };
+    const order = {
+      id: "o1",
+      symbol: "AAPL",
+      status: "filled",
+      qty: 1,
+      side: "buy",
+    };
     fakeWs.triggerMessage({ type: "order_update", payload: order });
     expect(service.latestOrders()[0]).toEqual(order as any);
   });

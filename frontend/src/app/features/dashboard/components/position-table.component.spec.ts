@@ -9,8 +9,26 @@ import type { Position } from "../../../shared/models/position.model";
 import type { Tick } from "../../../shared/models/market.model";
 
 const mockPositions: Position[] = [
-  { user_id: "u1", symbol: "AAPL", qty: 10, avg_price: 150, realized_pnl: 0, updated_at: "2024-01-01", unrealized_pnl: 50, current_price: 155 },
-  { user_id: "u1", symbol: "TSLA", qty: 5, avg_price: 200, realized_pnl: 0, updated_at: "2024-01-01", unrealized_pnl: -25, current_price: 195 },
+  {
+    user_id: "u1",
+    symbol: "AAPL",
+    qty: 10,
+    avg_price: 150,
+    realized_pnl: 0,
+    updated_at: "2024-01-01",
+    unrealized_pnl: 50,
+    current_price: 155,
+  },
+  {
+    user_id: "u1",
+    symbol: "TSLA",
+    qty: 5,
+    avg_price: 200,
+    realized_pnl: 0,
+    updated_at: "2024-01-01",
+    unrealized_pnl: -25,
+    current_price: 195,
+  },
 ];
 
 describe("PositionTableComponent", () => {
@@ -18,7 +36,10 @@ describe("PositionTableComponent", () => {
   let apiSpy: jasmine.SpyObj<ApiService>;
   let ticksSignal: WritableSignal<Map<string, Tick>>;
 
-  async function setup(positions: Position[], shouldFail = false): Promise<void> {
+  async function setup(
+    positions: Position[],
+    shouldFail = false,
+  ): Promise<void> {
     apiSpy = jasmine.createSpyObj<ApiService>("ApiService", [
       "getPositions",
       "placeOrder",
@@ -32,7 +53,9 @@ describe("PositionTableComponent", () => {
     apiSpy.placeOrder.and.returnValue(of({} as any));
 
     ticksSignal = signal<Map<string, Tick>>(
-      new Map([["AAPL", { symbol: "AAPL", price: 160, volume: 500, timestamp: "" }]]),
+      new Map([
+        ["AAPL", { symbol: "AAPL", price: 160, volume: 500, timestamp: "" }],
+      ]),
     );
 
     const wsSpy = jasmine.createSpyObj<WebSocketService>(
@@ -90,7 +113,11 @@ describe("PositionTableComponent", () => {
       fixture.nativeElement.querySelectorAll(".btn-danger-sm");
     closeBtns[0].click();
     expect(apiSpy.placeOrder).toHaveBeenCalledWith(
-      jasmine.objectContaining({ symbol: "AAPL", side: "sell", type: "market" }),
+      jasmine.objectContaining({
+        symbol: "AAPL",
+        side: "sell",
+        type: "market",
+      }),
     );
   });
 

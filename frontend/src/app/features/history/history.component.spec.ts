@@ -6,9 +6,33 @@ import { of, throwError } from "rxjs";
 import type { Order } from "../../shared/models/order.model";
 
 const mockOrders: Order[] = [
-  { id: "1", symbol: "AAPL", side: "buy", type: "market", qty: 10, status: "filled", created_at: "2024-01-01T10:00:00Z" } as Order,
-  { id: "2", symbol: "TSLA", side: "sell", type: "limit", qty: 5, status: "pending", created_at: "2024-01-01T11:00:00Z" } as Order,
-  { id: "3", symbol: "AAPL", side: "sell", type: "market", qty: 3, status: "cancelled", created_at: "2024-01-01T12:00:00Z" } as Order,
+  {
+    id: "1",
+    symbol: "AAPL",
+    side: "buy",
+    type: "market",
+    qty: 10,
+    status: "filled",
+    created_at: "2024-01-01T10:00:00Z",
+  } as Order,
+  {
+    id: "2",
+    symbol: "TSLA",
+    side: "sell",
+    type: "limit",
+    qty: 5,
+    status: "pending",
+    created_at: "2024-01-01T11:00:00Z",
+  } as Order,
+  {
+    id: "3",
+    symbol: "AAPL",
+    side: "sell",
+    type: "market",
+    qty: 3,
+    status: "cancelled",
+    created_at: "2024-01-01T12:00:00Z",
+  } as Order,
 ];
 
 describe("HistoryComponent", () => {
@@ -19,7 +43,9 @@ describe("HistoryComponent", () => {
     apiSpy = jasmine.createSpyObj<ApiService>("ApiService", ["getOrders"]);
 
     if (shouldFail) {
-      apiSpy.getOrders.and.returnValue(throwError(() => new Error("Network error")));
+      apiSpy.getOrders.and.returnValue(
+        throwError(() => new Error("Network error")),
+      );
     } else {
       apiSpy.getOrders.and.returnValue(of(orders));
     }

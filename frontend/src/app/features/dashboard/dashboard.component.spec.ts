@@ -54,19 +54,27 @@ describe("DashboardComponent", () => {
   });
 
   it("renders the pnl-card component", () => {
-    expect(fixture.debugElement.query(By.directive(PnlCardComponent))).not.toBeNull();
+    expect(
+      fixture.debugElement.query(By.directive(PnlCardComponent)),
+    ).not.toBeNull();
   });
 
   it("renders the system-health component", () => {
-    expect(fixture.debugElement.query(By.directive(SystemHealthComponent))).not.toBeNull();
+    expect(
+      fixture.debugElement.query(By.directive(SystemHealthComponent)),
+    ).not.toBeNull();
   });
 
   it("renders the price-chart component", () => {
-    expect(fixture.debugElement.query(By.directive(PriceChartComponent))).not.toBeNull();
+    expect(
+      fixture.debugElement.query(By.directive(PriceChartComponent)),
+    ).not.toBeNull();
   });
 
   it("renders the position-table component", () => {
-    expect(fixture.debugElement.query(By.directive(PositionTableComponent))).not.toBeNull();
+    expect(
+      fixture.debugElement.query(By.directive(PositionTableComponent)),
+    ).not.toBeNull();
   });
 
   it("calls ws.connect on ngOnInit", () => {

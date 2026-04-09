@@ -88,13 +88,17 @@ describe("OrderFormComponent", () => {
   it("shows limit price field when order type is limit", () => {
     setFormField("symbol", "AAPL");
     setFormField("type", "limit");
-    const limitPriceField = fixture.nativeElement.querySelector('input[formcontrolname="limitPrice"]');
+    const limitPriceField = fixture.nativeElement.querySelector(
+      'input[formcontrolname="limitPrice"]',
+    );
     expect(limitPriceField).not.toBeNull();
   });
 
   it("hides limit price field when order type is market", () => {
     setFormField("type", "market");
-    const limitPriceField = fixture.nativeElement.querySelector('input[formcontrolname="limitPrice"]');
+    const limitPriceField = fixture.nativeElement.querySelector(
+      'input[formcontrolname="limitPrice"]',
+    );
     expect(limitPriceField).toBeNull();
   });
 

@@ -14,11 +14,9 @@ describe("LoginComponent", () => {
   let router: Router;
 
   beforeEach(async () => {
-    authSpy = jasmine.createSpyObj<AuthService>(
-      "AuthService",
-      ["login"],
-      { isAuthenticated: signal(false) },
-    );
+    authSpy = jasmine.createSpyObj<AuthService>("AuthService", ["login"], {
+      isAuthenticated: signal(false),
+    });
 
     await TestBed.configureTestingModule({
       imports: [LoginComponent, RouterTestingModule],
@@ -61,7 +59,9 @@ describe("LoginComponent", () => {
   });
 
   it("navigates to /dashboard on successful login", () => {
-    authSpy.login.and.returnValue(of({ access_token: "tok", refresh_token: "ref" } as any));
+    authSpy.login.and.returnValue(
+      of({ access_token: "tok", refresh_token: "ref" } as any),
+    );
     fillForm("user@example.com", "password123");
     getSubmitButton().click();
     fixture.detectChanges();
@@ -69,13 +69,18 @@ describe("LoginComponent", () => {
   });
 
   it("button shows loading text while submitting", () => {
-    authSpy.login.and.returnValue(of({ access_token: "tok", refresh_token: "ref" } as any));
+    authSpy.login.and.returnValue(
+      of({ access_token: "tok", refresh_token: "ref" } as any),
+    );
     fillForm("user@example.com", "password123");
     // Patch subscribe to not complete so we can check loading state
     const btn = getSubmitButton();
     // After click detectChanges the loading should have resolved; just verify it calls login
     btn.click();
-    expect(authSpy.login).toHaveBeenCalledWith("user@example.com", "password123");
+    expect(authSpy.login).toHaveBeenCalledWith(
+      "user@example.com",
+      "password123",
+    );
   });
 
   // ── Validation edge cases ────────────────────────────────────────────────
@@ -91,7 +96,9 @@ describe("LoginComponent", () => {
   });
 
   it("enables submit with valid email and non-empty password", () => {
-    authSpy.login.and.returnValue(of({ access_token: "t", refresh_token: "r" } as any));
+    authSpy.login.and.returnValue(
+      of({ access_token: "t", refresh_token: "r" } as any),
+    );
     fillForm("user@example.com", "anypassword");
     expect(getSubmitButton().disabled).toBeFalse();
   });
@@ -130,7 +137,9 @@ describe("LoginComponent", () => {
   });
 
   it("does not navigate on failed login", () => {
-    authSpy.login.and.returnValue(throwError(() => ({ error: { error: "err" } })));
+    authSpy.login.and.returnValue(
+      throwError(() => ({ error: { error: "err" } })),
+    );
     fillForm("user@example.com", "pass");
     getSubmitButton().click();
     fixture.detectChanges();
@@ -138,13 +147,17 @@ describe("LoginComponent", () => {
   });
 
   it("error is cleared between submit attempts", () => {
-    authSpy.login.and.returnValue(throwError(() => ({ error: { error: "err" } })));
+    authSpy.login.and.returnValue(
+      throwError(() => ({ error: { error: "err" } })),
+    );
     fillForm("user@example.com", "pass");
     getSubmitButton().click();
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector(".error")).not.toBeNull();
 
-    authSpy.login.and.returnValue(of({ access_token: "t", refresh_token: "r" } as any));
+    authSpy.login.and.returnValue(
+      of({ access_token: "t", refresh_token: "r" } as any),
+    );
     getSubmitButton().click();
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector(".error")).toBeNull();

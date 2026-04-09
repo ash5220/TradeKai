@@ -12,11 +12,9 @@ describe("AppComponent", () => {
   let authSpy: jasmine.SpyObj<AuthService>;
 
   beforeEach(async () => {
-    authSpy = jasmine.createSpyObj<AuthService>(
-      "AuthService",
-      ["logout"],
-      { isAuthenticated: signal(false) },
-    );
+    authSpy = jasmine.createSpyObj<AuthService>("AuthService", ["logout"], {
+      isAuthenticated: signal(false),
+    });
 
     await TestBed.configureTestingModule({
       imports: [AppComponent, RouterTestingModule],

@@ -83,13 +83,15 @@ describe("TradeLogComponent", () => {
 
   it("applies 'badge-filled' class for filled status", async () => {
     await setup(mockOrders);
-    const filledBadges = fixture.nativeElement.querySelectorAll(".badge-filled");
+    const filledBadges =
+      fixture.nativeElement.querySelectorAll(".badge-filled");
     expect(filledBadges.length).toBeGreaterThan(0);
   });
 
   it("applies 'badge-pending' class for pending status", async () => {
     await setup(mockOrders);
-    const pendingBadges = fixture.nativeElement.querySelectorAll(".badge-pending");
+    const pendingBadges =
+      fixture.nativeElement.querySelectorAll(".badge-pending");
     expect(pendingBadges.length).toBeGreaterThan(0);
   });
 
@@ -104,16 +106,23 @@ describe("TradeLogComponent", () => {
   });
 
   it("applies all known status classes correctly", async () => {
-    const allStatuses: Order[] = ["filled", "pending", "submitted", "cancelled", "rejected"].map(
-      (status, i) => ({
-        id: String(i),
-        symbol: "AAPL",
-        side: "buy",
-        type: "market",
-        qty: 1,
-        status,
-        created_at: new Date().toISOString(),
-      } as unknown as Order),
+    const allStatuses: Order[] = [
+      "filled",
+      "pending",
+      "submitted",
+      "cancelled",
+      "rejected",
+    ].map(
+      (status, i) =>
+        ({
+          id: String(i),
+          symbol: "AAPL",
+          side: "buy",
+          type: "market",
+          qty: 1,
+          status,
+          created_at: new Date().toISOString(),
+        }) as unknown as Order,
     );
 
     await setup(allStatuses);
@@ -127,6 +136,8 @@ describe("TradeLogComponent", () => {
 
   it("falls back to badge-pending for unknown status", async () => {
     await setup([]);
-    expect(fixture.componentInstance.statusClass("unknown_status")).toBe("badge-pending");
+    expect(fixture.componentInstance.statusClass("unknown_status")).toBe(
+      "badge-pending",
+    );
   });
 });

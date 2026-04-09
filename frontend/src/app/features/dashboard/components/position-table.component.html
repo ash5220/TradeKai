@@ -26,9 +26,7 @@
             <td>{{ currentPrice(pos.symbol) | number: "1.2-2" }}</td>
             <td
               [ngClass]="
-                (pos.unrealized_pnl ?? 0) >= 0
-                  ? 'pnl-positive'
-                  : 'pnl-negative'
+                (pos.unrealized_pnl ?? 0) >= 0 ? 'pnl-positive' : 'pnl-negative'
               "
             >
               {{ pos.unrealized_pnl | number: "1.2-2" }}

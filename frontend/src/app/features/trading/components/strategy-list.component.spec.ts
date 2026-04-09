@@ -100,7 +100,9 @@ describe("StrategyListComponent", () => {
     await setup([]);
     const empty = fixture.nativeElement.querySelector(".empty");
     expect(empty).not.toBeNull();
-    expect(fixture.nativeElement.querySelectorAll(".strategy-item").length).toBe(0);
+    expect(
+      fixture.nativeElement.querySelectorAll(".strategy-item").length,
+    ).toBe(0);
   });
 
   // ── Error cases ──────────────────────────────────────────────────────────

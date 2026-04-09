@@ -48,15 +48,21 @@ describe("TradingComponent", () => {
   });
 
   it("renders the strategy-list component", () => {
-    expect(fixture.debugElement.query(By.directive(StrategyListComponent))).not.toBeNull();
+    expect(
+      fixture.debugElement.query(By.directive(StrategyListComponent)),
+    ).not.toBeNull();
   });
 
   it("renders the order-form component", () => {
-    expect(fixture.debugElement.query(By.directive(OrderFormComponent))).not.toBeNull();
+    expect(
+      fixture.debugElement.query(By.directive(OrderFormComponent)),
+    ).not.toBeNull();
   });
 
   it("renders the trade-log component", () => {
-    expect(fixture.debugElement.query(By.directive(TradeLogComponent))).not.toBeNull();
+    expect(
+      fixture.debugElement.query(By.directive(TradeLogComponent)),
+    ).not.toBeNull();
   });
 
   it("has correct grid layout with sidebar and main areas", () => {

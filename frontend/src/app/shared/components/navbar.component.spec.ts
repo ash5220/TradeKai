@@ -13,11 +13,9 @@ describe("NavbarComponent", () => {
   let router: Router;
 
   function setup(authenticated: boolean): void {
-    authSpy = jasmine.createSpyObj<AuthService>(
-      "AuthService",
-      ["logout"],
-      { isAuthenticated: signal(authenticated) },
-    );
+    authSpy = jasmine.createSpyObj<AuthService>("AuthService", ["logout"], {
+      isAuthenticated: signal(authenticated),
+    });
     authSpy.logout.and.callFake(() => {});
   }
 
@@ -46,8 +44,10 @@ describe("NavbarComponent", () => {
     it("renders all three nav links", () => {
       const links: NodeListOf<HTMLAnchorElement> =
         fixture.nativeElement.querySelectorAll(".nav-links a");
-      const hrefs = Array.from(links).map((l) =>
-        l.getAttribute("routerlink") ?? l.getAttribute("ng-reflect-router-link"),
+      const hrefs = Array.from(links).map(
+        (l) =>
+          l.getAttribute("routerlink") ??
+          l.getAttribute("ng-reflect-router-link"),
       );
       expect(hrefs).toContain("/dashboard");
       expect(hrefs).toContain("/trading");

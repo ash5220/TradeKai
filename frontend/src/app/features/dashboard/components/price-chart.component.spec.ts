@@ -13,8 +13,26 @@ describe("PriceChartComponent", () => {
   let wsSpy: jasmine.SpyObj<WebSocketService>;
 
   const sampleCandles: Candle[] = [
-    { symbol: "AAPL", interval: "1m", ts: "2024-01-01T09:30:00Z", open: 100, high: 105, low: 99, close: 103, volume: 1000 },
-    { symbol: "AAPL", interval: "1m", ts: "2024-01-01T09:31:00Z", open: 103, high: 106, low: 102, close: 105, volume: 1200 },
+    {
+      symbol: "AAPL",
+      interval: "1m",
+      ts: "2024-01-01T09:30:00Z",
+      open: 100,
+      high: 105,
+      low: 99,
+      close: 103,
+      volume: 1000,
+    },
+    {
+      symbol: "AAPL",
+      interval: "1m",
+      ts: "2024-01-01T09:31:00Z",
+      open: 103,
+      high: 106,
+      low: 102,
+      close: 105,
+      volume: 1200,
+    },
   ];
 
   beforeEach(async () => {
@@ -103,9 +121,9 @@ describe("PriceChartComponent", () => {
   // ── Error cases ──────────────────────────────────────────────────────────
 
   it("does not throw when getCandles fails", () => {
-    apiSpy.getCandles.and.returnValue(throwError(() => new Error("Network error")));
+    apiSpy.getCandles.and.returnValue(
+      throwError(() => new Error("Network error")),
+    );
     expect(() => fixture.detectChanges()).not.toThrow();
   });
 });
-
-

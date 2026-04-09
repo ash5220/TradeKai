@@ -12,11 +12,11 @@ describe("PnlCardComponent", () => {
     apiSpy = jasmine.createSpyObj<ApiService>("ApiService", ["getPnL"]);
 
     if (shouldFail) {
-      apiSpy.getPnL.and.returnValue(throwError(() => new Error("Network error")));
-    } else {
       apiSpy.getPnL.and.returnValue(
-        of({ daily_realized_pnl: pnlValue ?? 0 }),
+        throwError(() => new Error("Network error")),
       );
+    } else {
+      apiSpy.getPnL.and.returnValue(of({ daily_realized_pnl: pnlValue ?? 0 }));
     }
 
     TestBed.configureTestingModule({
@@ -32,14 +32,16 @@ describe("PnlCardComponent", () => {
 
   it("applies 'positive' class when daily PnL is positive", () => {
     createFixtureWith(150.5);
-    const pnlEl: HTMLElement = fixture.nativeElement.querySelector(".metric-pnl");
+    const pnlEl: HTMLElement =
+      fixture.nativeElement.querySelector(".metric-pnl");
     expect(pnlEl.classList).toContain("positive");
     expect(pnlEl.classList).not.toContain("negative");
   });
 
   it("applies 'negative' class when daily PnL is negative", () => {
     createFixtureWith(-75.25);
-    const pnlEl: HTMLElement = fixture.nativeElement.querySelector(".metric-pnl");
+    const pnlEl: HTMLElement =
+      fixture.nativeElement.querySelector(".metric-pnl");
     expect(pnlEl.classList).toContain("negative");
     expect(pnlEl.classList).not.toContain("positive");
   });
@@ -53,7 +55,8 @@ describe("PnlCardComponent", () => {
 
   it("applies 'positive' class when PnL is exactly zero", () => {
     createFixtureWith(0);
-    const pnlEl: HTMLElement = fixture.nativeElement.querySelector(".metric-pnl");
+    const pnlEl: HTMLElement =
+      fixture.nativeElement.querySelector(".metric-pnl");
     expect(pnlEl.classList).toContain("positive");
   });
 
@@ -62,7 +65,8 @@ describe("PnlCardComponent", () => {
   it("shows no PnL value on API error (summary remains null)", () => {
     createFixtureWith(undefined, true);
     // The summary signal stays null — the metric-pnl span should have no number content
-    const pnlEl: HTMLElement = fixture.nativeElement.querySelector(".metric-pnl");
+    const pnlEl: HTMLElement =
+      fixture.nativeElement.querySelector(".metric-pnl");
     // Angular's decimal pipe renders null/undefined as empty string
     expect(pnlEl.textContent?.trim() ?? "").toBe("");
   });
