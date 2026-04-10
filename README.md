@@ -232,8 +232,8 @@ Connection auth (browser clients):
 
 ```js
 const ws = new WebSocket("wss://localhost/ws", [
-    "tradekai.v1",
-    "access-token.<access_token>",
+  "tradekai.v1",
+  "access-token.<access_token>",
 ]);
 ```
 
