@@ -62,8 +62,8 @@ export class WebSocketService implements OnDestroy {
     if (!token) return;
 
     this._connectionState.set("connecting");
-    const url = `${environment.wsUrl}?token=${encodeURIComponent(token)}`;
-    this.ws = new WebSocket(url);
+    const protocols = ["tradekai.v1", `access-token.${token}`];
+    this.ws = new WebSocket(environment.wsUrl, protocols);
 
     this.ws.onopen = () => {
       this._connectionState.set("connected");

@@ -2,6 +2,8 @@ package ws
 
 import (
 	"encoding/json"
+	"fmt"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -96,8 +98,21 @@ func (c *Client) handleClientMessage(raw []byte) {
 	}
 	switch m.Action {
 	case "subscribe":
+		if !c.canAccessRoom(m.Room) {
+			return
+		}
 		c.hub.JoinRoom(c, m.Room)
 	case "unsubscribe":
+		if !c.canAccessRoom(m.Room) {
+			return
+		}
 		c.hub.LeaveRoom(c, m.Room)
 	}
+}
+
+func (c *Client) canAccessRoom(room string) bool {
+	if strings.HasPrefix(room, "ticks:") {
+		return strings.TrimSpace(strings.TrimPrefix(room, "ticks:")) != ""
+	}
+	return room == fmt.Sprintf("orders:%s", c.userID)
 }

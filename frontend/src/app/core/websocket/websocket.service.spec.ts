@@ -88,10 +88,11 @@ describe("WebSocketService", () => {
 
   // ── connect ───────────────────────────────────────────────────────────────
 
-  it("connect() creates WebSocket with token appended to URL", () => {
+  it("connect() creates WebSocket with auth subprotocol token", () => {
     service.connect();
     expect(wsSpy).toHaveBeenCalledWith(
-      jasmine.stringContaining("token=test-token"),
+      jasmine.any(String),
+      jasmine.arrayContaining(["tradekai.v1", "access-token.test-token"]),
     );
   });
 

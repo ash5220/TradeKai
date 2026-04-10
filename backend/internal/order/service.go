@@ -3,6 +3,7 @@ package order
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -132,10 +133,25 @@ func (s *Service) PlaceFromSignal(ctx context.Context, userID uuid.UUID, signal 
 		telemetry.ObserveOrderExecutionLatency(s.executorName(), "error", time.Since(execStart).Seconds())
 
 		// Mark as rejected on persistent failure
-		_, _ = s.queries.UpdateOrderStatus(ctx, generated.UpdateOrderStatusParams{
+		if _, statusErr := s.queries.UpdateOrderStatus(ctx, generated.UpdateOrderStatusParams{
 			ID:     order.ID,
 			Status: generated.OrderStatusRejected,
-		})
+		}); statusErr != nil {
+			s.log.Error("failed to persist rejected order status",
+				zap.Stringer("order_id", order.ID),
+				zap.Stringer("user", userID),
+				zap.Error(statusErr))
+			s.audit.Error("order_status_update_failed",
+				zap.Stringer("order_id", order.ID),
+				zap.Stringer("user", userID),
+				zap.String("target_status", string(domain.OrderStatusRejected)),
+				zap.Error(statusErr))
+
+			return &order, errors.Join(
+				fmt.Errorf("submit order: %w", err),
+				fmt.Errorf("persist rejected status: %w", statusErr),
+			)
+		}
 		order.Status = domain.OrderStatusRejected
 		s.recordStatus(order.Status)
 		s.publishUpdate(order)
@@ -150,11 +166,26 @@ func (s *Service) PlaceFromSignal(ctx context.Context, userID uuid.UUID, signal 
 	telemetry.ObserveOrderExecutionLatency(s.executorName(), "success", time.Since(execStart).Seconds())
 
 	// Update to submitted
-	_, _ = s.queries.UpdateOrderStatus(ctx, generated.UpdateOrderStatusParams{
+	if _, statusErr := s.queries.UpdateOrderStatus(ctx, generated.UpdateOrderStatusParams{
 		ID:         order.ID,
 		Status:     generated.OrderStatusSubmitted,
 		ExchangeID: &exchangeID,
-	})
+	}); statusErr != nil {
+		order.ExchangeID = exchangeID
+		s.log.Error("failed to persist submitted order status",
+			zap.Stringer("order_id", order.ID),
+			zap.Stringer("user", userID),
+			zap.String("exchange_id", exchangeID),
+			zap.Error(statusErr))
+		s.audit.Error("order_status_update_failed",
+			zap.Stringer("order_id", order.ID),
+			zap.Stringer("user", userID),
+			zap.String("target_status", string(domain.OrderStatusSubmitted)),
+			zap.String("exchange_id", exchangeID),
+			zap.Error(statusErr))
+
+		return &order, fmt.Errorf("persist submitted status: %w", statusErr)
+	}
 	order.Status = domain.OrderStatusSubmitted
 	order.ExchangeID = exchangeID
 	s.recordStatus(order.Status)

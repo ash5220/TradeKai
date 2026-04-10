@@ -7,10 +7,10 @@ import { ApiService } from "../../core/api/api.service";
 import { signal } from "@angular/core";
 import { of } from "rxjs";
 import { By } from "@angular/platform-browser";
-import { PriceChartComponent } from "./components/price-chart.component";
-import { PositionTableComponent } from "./components/position-table.component";
-import { PnlCardComponent } from "./components/pnl-card.component";
-import { SystemHealthComponent } from "./components/system-health.component";
+import { PriceChartComponent } from "./price-chart/price-chart.component";
+import { PositionTableComponent } from "./position-table/position-table.component";
+import { PnlCardComponent } from "./pnl-card/pnl-card.component";
+import { SystemHealthComponent } from "./system-health/system-health.component";
 
 describe("DashboardComponent", () => {
   let fixture: ComponentFixture<DashboardComponent>;

@@ -2,7 +2,7 @@ import { TestBed } from "@angular/core/testing";
 import { ComponentFixture } from "@angular/core/testing";
 import { RouterTestingModule } from "@angular/router/testing";
 import { AppComponent } from "./app.component";
-import { NavbarComponent } from "./shared/components/navbar.component";
+import { NavbarComponent } from "./shared/navbar/navbar.component";
 import { AuthService } from "./core/auth/auth.service";
 import { signal } from "@angular/core";
 import { By } from "@angular/platform-browser";

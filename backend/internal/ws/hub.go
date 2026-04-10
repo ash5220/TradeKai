@@ -24,6 +24,7 @@ var upgrader = websocket.Upgrader{
 	HandshakeTimeout: 10 * time.Second,
 	ReadBufferSize:   1024,
 	WriteBufferSize:  4096,
+	Subprotocols:     []string{"tradekai.v1"},
 	CheckOrigin: func(r *http.Request) bool {
 		// Origin validation is handled by CORS middleware upstream
 		return true

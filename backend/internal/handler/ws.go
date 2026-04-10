@@ -2,6 +2,7 @@ package handler
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 
@@ -24,11 +25,11 @@ func NewWSHandler(hub *ws.Hub, jwtManager *auth.Manager) *WSHandler {
 // Upgrade godoc
 // @Summary Upgrade to WebSocket connection
 // @Tags websocket
-// @Param token query string true "JWT access token"
+// @Param Authorization header string false "Bearer access token"
+// @Param Sec-WebSocket-Protocol header string false "Include access-token.<JWT> as one subprotocol entry"
 // @Router /ws [get]
 func (h *WSHandler) Upgrade(c *gin.Context) {
-	// JWT is passed via query param (can't set Authorization header in WebSocket)
-	tokenStr := c.Query("token")
+	tokenStr := tokenFromRequest(c)
 	if tokenStr == "" {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": domain.ErrUnauthorized.Error()})
 		return
@@ -44,4 +45,33 @@ func (h *WSHandler) Upgrade(c *gin.Context) {
 		// Upgrade writes its own error response on failure
 		return
 	}
+}
+
+func tokenFromRequest(c *gin.Context) string {
+	if token := tokenFromAuthorizationHeader(c.GetHeader("Authorization")); token != "" {
+		return token
+	}
+	return tokenFromWSSubprotocolHeader(c.GetHeader("Sec-WebSocket-Protocol"))
+}
+
+func tokenFromAuthorizationHeader(v string) string {
+	parts := strings.SplitN(strings.TrimSpace(v), " ", 2)
+	if len(parts) != 2 || !strings.EqualFold(parts[0], "Bearer") {
+		return ""
+	}
+	return strings.TrimSpace(parts[1])
+}
+
+func tokenFromWSSubprotocolHeader(v string) string {
+	for _, raw := range strings.Split(v, ",") {
+		proto := strings.TrimSpace(raw)
+		if !strings.HasPrefix(proto, "access-token.") {
+			continue
+		}
+		token := strings.TrimPrefix(proto, "access-token.")
+		if token != "" {
+			return token
+		}
+	}
+	return ""
 }

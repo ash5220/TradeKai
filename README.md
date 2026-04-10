@@ -224,9 +224,18 @@ Health output includes database status, exchange connectivity snapshot, and memo
 | GET    | `/api/v1/strategies`             | Strategies list    |
 | POST   | `/api/v1/strategies/:id/start`   | Start strategy     |
 | POST   | `/api/v1/strategies/:id/stop`    | Stop strategy      |
-| GET    | `/ws?token=<access_token>`       | WebSocket session  |
+| GET    | `/ws`                            | WebSocket session  |
 
 ## WebSocket Protocol
+
+Connection auth (browser clients):
+
+```js
+const ws = new WebSocket("wss://localhost/ws", [
+    "tradekai.v1",
+    "access-token.<access_token>",
+]);
+```
 
 Subscribe/unsubscribe payloads:
 
